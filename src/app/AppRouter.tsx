@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
+import { PlanPage } from '@/features/plan/PlanPage'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { RedirectIfOnboarded, RequireOnboarding } from './OnboardingGate'
 import { RootLayout } from './RootLayout'
@@ -25,15 +26,7 @@ const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: 'plan',
-            element: (
-              <PlaceholderPage
-                title="Programme"
-                description="Le générateur de plan arrive en M0.4."
-              />
-            ),
-          },
+          { path: 'plan', element: <PlanPage /> },
           {
             path: 'progress',
             element: (

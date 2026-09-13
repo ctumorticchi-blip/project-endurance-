@@ -28,6 +28,8 @@ export interface TrainingPlan {
   raceGoalId: string
   createdAt: string
   weeks: TrainingWeek[]
+  /** Non-fatal notices surfaced at generation time (brief §16 — e.g. a runway too short for the distance). */
+  warnings: string[]
 }
 
 export function createTrainingPlan(input: Omit<TrainingPlan, 'id' | 'createdAt'>): TrainingPlan {

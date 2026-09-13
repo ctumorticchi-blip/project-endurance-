@@ -1,16 +1,20 @@
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { createAthleteProfile } from '@/core/athlete/AthleteProfile'
+import type { Availability } from '@/core/availability/Availability'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { createRaceGoal } from '@/core/goals/RaceGoal'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
+import { generateTrainingPlan } from '@/sports/triathlon/planning/generateTrainingPlan'
 import type { OnboardingDraft } from './onboardingState'
 
 /**
- * Splits the flat onboarding draft into the three domain aggregates and
- * persists them. Throws if required fields are missing — callers must gate
- * this behind `isDraftCompleteEnoughToSubmit` first.
+ * Splits the flat onboarding draft into the three domain aggregates,
+ * persists them, then generates and persists the first training plan.
+ * Throws if required fields are missing — callers must gate this behind
+ * `isDraftCompleteEnoughToSubmit` first.
  */
-export function submitOnboarding(draft: OnboardingDraft): void {
+export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string[] } {
   if (!draft.distance || !draft.raceDate) {
     throw new Error('Cannot submit onboarding: race goal is incomplete')
   }
@@ -41,10 +45,17 @@ export function submitOnboarding(draft: OnboardingDraft): void {
     raceName: draft.raceName,
   })
 
-  AthleteProfileRepository.save(profile)
-  RaceGoalRepository.save(raceGoal)
-  AvailabilityRepository.save({
+  const availability: Availability = {
     weeklyPattern: draft.weeklyPattern,
     exceptions: draft.exceptions,
-  })
+  }
+
+  AthleteProfileRepository.save(profile)
+  RaceGoalRepository.save(raceGoal)
+  AvailabilityRepository.save(availability)
+
+  const { plan, warnings } = generateTrainingPlan({ raceGoal, availability })
+  TrainingPlanRepository.save(plan)
+
+  return { planWarnings: warnings }
 }

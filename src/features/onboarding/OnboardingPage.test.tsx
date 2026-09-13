@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { allSessions } from '@/core/training/TrainingPlan'
+import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { OnboardingPage } from './OnboardingPage'
 
 function renderOnboarding() {
@@ -73,6 +75,15 @@ describe('OnboardingPage', () => {
       minutes: 90,
       poolAccess: false,
     })
+
+    const plan = TrainingPlanRepository.load()
+    expect(plan).toBeDefined()
+    expect(plan?.raceGoalId).toBe(goal?.id)
+    expect(plan?.weeks.length).toBeGreaterThan(0)
+    // Only Saturday is available, so every session must land on a Saturday.
+    for (const session of allSessions(plan!)) {
+      expect(new Date(session.date).getDay()).toBe(6)
+    }
   })
 
   it('keeps Continue disabled until the current step is valid', () => {
