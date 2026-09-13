@@ -1,8 +1,12 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { CssTestPage } from '@/features/calibration/CssTestPage'
+import { FtpTestPage } from '@/features/calibration/FtpTestPage'
+import { ThresholdPaceTestPage } from '@/features/calibration/ThresholdPaceTestPage'
 import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage'
 import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PlanPage } from '@/features/plan/PlanPage'
+import { ProfilePage } from '@/features/profile/ProfilePage'
 import { SessionPlayerPage } from '@/features/session-player/SessionPlayerPage'
 import { TodayPage } from '@/features/today/TodayPage'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
@@ -35,15 +39,10 @@ const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: 'profile',
-            element: (
-              <PlaceholderPage
-                title="Profil"
-                description="Le détail du profil athlète arrive avec le moteur de calibration (M0.10)."
-              />
-            ),
-          },
+          { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile/tests/ftp', element: <FtpTestPage /> },
+          { path: 'profile/tests/css', element: <CssTestPage /> },
+          { path: 'profile/tests/threshold', element: <ThresholdPaceTestPage /> },
           {
             path: '*',
             element: (
