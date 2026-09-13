@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSessionFeedback, type SessionFeedback } from '@/core/history/SessionFeedback'
 import { createPlannedSession, type PlannedSession, type SessionPriority } from '@/core/training/PlannedSession'
-import { decideAdaptation } from './decideAdaptation'
+import { decideAdaptation, decideAvailabilityConstraint } from './decideAdaptation'
 
 function session(priority: SessionPriority = 'key', estimatedDurationMin = 60): PlannedSession {
   return createPlannedSession({
@@ -191,5 +191,24 @@ describe('decideAdaptation — invariants (brief §49)', () => {
       expect(r.reasons.length).toBeGreaterThan(0)
       expect(r.explanation.length).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('decideAvailabilityConstraint', () => {
+  it('KEEPs when today\'s available time already covers the session', () => {
+    const result = decideAvailabilityConstraint(session('key', 60), 90)
+    expect(result.type).toBe('KEEP')
+  })
+
+  it('REDUCEs to fit the time actually available', () => {
+    const result = decideAvailabilityConstraint(session('key', 60), 30)
+    expect(result.type).toBe('REDUCE')
+    expect(result.after.estimatedDurationMin).toBe(30)
+    expect(result.reasons).toContain('REDUCED_AVAILABILITY_TODAY')
+  })
+
+  it('never reduces below the minimum viable session length', () => {
+    const result = decideAvailabilityConstraint(session('key', 60), 2)
+    expect(result.after.estimatedDurationMin).toBeGreaterThan(0)
   })
 })

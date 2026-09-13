@@ -7,11 +7,12 @@ import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import type { AdaptationDecision } from '@/engine/adaptation/AdaptationDecision'
 import { applyDurationAdaptation, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
-import { decideAdaptation } from '@/engine/adaptation/decideAdaptation'
+import { decideAdaptation, decideAvailabilityConstraint } from '@/engine/adaptation/decideAdaptation'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
+import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
@@ -48,6 +49,19 @@ export function TodayPage() {
     if (!summary.session) return
     const recentFeedback = [...SessionFeedbackRepository.loadAll()].reverse()
     const result = decideAdaptation({ session: summary.session, readiness: level, recentFeedback })
+    AdaptationDecisionRepository.append(result)
+
+    if (result.type !== 'KEEP') {
+      const updatedSession = applyDurationAdaptation(summary.session, result)
+      TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
+    }
+
+    setAdaptation(result)
+  }
+
+  const handleAvailabilityAdjust = (availableMinutes: number) => {
+    if (!summary.session) return
+    const result = decideAvailabilityConstraint(summary.session, availableMinutes)
     AdaptationDecisionRepository.append(result)
 
     if (result.type !== 'KEEP') {
@@ -125,6 +139,8 @@ export function TodayPage() {
               {adaptation.explanation}
             </p>
           )}
+
+          <AdjustAvailabilityToday date={today} onAdjust={handleAvailabilityAdjust} />
 
           <LinkButton to={`/session/${summary.session.id}`} className="w-full">
             Commencer

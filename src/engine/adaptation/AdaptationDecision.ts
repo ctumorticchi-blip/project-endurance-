@@ -4,6 +4,7 @@ export type AdaptationType = 'KEEP' | 'REDUCE' | 'INCREASE' | 'MOVE' | 'REPLACE'
 
 export type ReasonCode =
   | 'ELEVATED_FATIGUE'
+  | 'REDUCED_AVAILABILITY_TODAY'
   | 'HIGH_RECENT_RPE'
   | 'LOW_RECENT_RPE'
   | 'HIGH_READINESS'

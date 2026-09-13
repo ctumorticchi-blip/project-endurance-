@@ -212,3 +212,38 @@ export function decideAdaptation(context: AdaptationContext): AdaptationDecision
 
   return decideUpcomingSession(session, readiness, recentFeedback)
 }
+
+/**
+ * A same-day availability exception ("j'ai moins de temps aujourd'hui")
+ * shrinks the session to fit rather than leaving it overshooting the time
+ * the athlete actually has — a distinct, purely time-driven rule from the
+ * fatigue/RPE path above (brief §22: exceptions recompute intelligently,
+ * they don't just get ignored).
+ */
+export function decideAvailabilityConstraint(
+  session: PlannedSession,
+  availableMinutes: number,
+): AdaptationDecision {
+  const before: AdaptationSnapshot = { estimatedDurationMin: session.estimatedDurationMin }
+
+  if (availableMinutes >= session.estimatedDurationMin) {
+    return decision(
+      session,
+      'KEEP',
+      ['NO_SIGNAL'],
+      before,
+      before,
+      "Séance inchangée : le temps disponible aujourd'hui suffit.",
+    )
+  }
+
+  const afterMinutes = Math.max(MIN_SESSION_MINUTES, Math.round(availableMinutes))
+  return decision(
+    session,
+    'REDUCE',
+    ['REDUCED_AVAILABILITY_TODAY'],
+    before,
+    { estimatedDurationMin: afterMinutes },
+    `Séance réduite de ${before.estimatedDurationMin} à ${afterMinutes} min pour tenir dans le temps que tu as aujourd'hui.`,
+  )
+}
