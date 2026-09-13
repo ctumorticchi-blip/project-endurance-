@@ -11,20 +11,26 @@ import { ProgressPage } from '@/features/progress/ProgressPage'
 import { SessionPlayerPage } from '@/features/session-player/SessionPlayerPage'
 import { TodayPage } from '@/features/today/TodayPage'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { FocusedLayout } from './FocusedLayout'
 import { RedirectIfOnboarded, RequireOnboarding } from './OnboardingGate'
 import { RootLayout } from './RootLayout'
 
 const router = createBrowserRouter([
   {
     element: <RedirectIfOnboarded />,
-    children: [{ path: 'onboarding', element: <OnboardingPage /> }],
+    children: [{ element: <FocusedLayout />, children: [{ path: 'onboarding', element: <OnboardingPage /> }] }],
   },
   {
     element: <RequireOnboarding />,
     children: [
-      { path: 'session/:sessionId', element: <SessionPlayerPage /> },
-      { path: 'session/:sessionId/feedback', element: <CompletedFeedbackPage /> },
-      { path: 'session/:sessionId/missed', element: <MissedSessionPage /> },
+      {
+        element: <FocusedLayout />,
+        children: [
+          { path: 'session/:sessionId', element: <SessionPlayerPage /> },
+          { path: 'session/:sessionId/feedback', element: <CompletedFeedbackPage /> },
+          { path: 'session/:sessionId/missed', element: <MissedSessionPage /> },
+        ],
+      },
       {
         element: <RootLayout />,
         children: [
