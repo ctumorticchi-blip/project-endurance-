@@ -7,6 +7,7 @@ import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PlanPage } from '@/features/plan/PlanPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
+import { ProgressPage } from '@/features/progress/ProgressPage'
 import { SessionPlayerPage } from '@/features/session-player/SessionPlayerPage'
 import { TodayPage } from '@/features/today/TodayPage'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
@@ -30,15 +31,7 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="/today" replace /> },
           { path: 'today', element: <TodayPage /> },
           { path: 'plan', element: <PlanPage /> },
-          {
-            path: 'progress',
-            element: (
-              <PlaceholderPage
-                title="Progrès"
-                description="La page de progression arrive en M0.11."
-              />
-            ),
-          },
+          { path: 'progress', element: <ProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'profile/tests/ftp', element: <FtpTestPage /> },
           { path: 'profile/tests/css', element: <CssTestPage /> },
