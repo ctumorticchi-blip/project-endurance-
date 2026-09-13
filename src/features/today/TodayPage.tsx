@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
@@ -96,6 +97,13 @@ export function TodayPage() {
           <LinkButton to={`/session/${summary.session.id}`} className="w-full">
             Commencer
           </LinkButton>
+
+          <Link
+            to={`/session/${summary.session.id}/missed`}
+            className="text-center text-xs text-text-muted underline"
+          >
+            Je n'ai pas fait cette séance
+          </Link>
         </>
       ) : (
         <div className="rounded-lg border border-border bg-surface p-4">

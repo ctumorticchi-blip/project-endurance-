@@ -1,4 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage'
+import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PlanPage } from '@/features/plan/PlanPage'
 import { SessionPlayerPage } from '@/features/session-player/SessionPlayerPage'
@@ -16,15 +18,8 @@ const router = createBrowserRouter([
     element: <RequireOnboarding />,
     children: [
       { path: 'session/:sessionId', element: <SessionPlayerPage /> },
-      {
-        path: 'session/:sessionId/feedback',
-        element: (
-          <PlaceholderPage
-            title="Ressenti"
-            description="Le formulaire de feedback post-séance arrive en M0.7."
-          />
-        ),
-      },
+      { path: 'session/:sessionId/feedback', element: <CompletedFeedbackPage /> },
+      { path: 'session/:sessionId/missed', element: <MissedSessionPage /> },
       {
         element: <RootLayout />,
         children: [
