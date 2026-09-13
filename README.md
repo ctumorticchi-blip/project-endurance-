@@ -72,13 +72,18 @@ Règle structurante : **la logique sportive ne dépend jamais de React** —
 
 ## Tests
 
-Le moteur (`engine/`, `sports/*/planning`, `sports/*/sessions`) est
-significativement plus testé que l'UI décorative — voir la stratégie de
-test dans `docs/adaptation-engine.md` (invariants) et les fichiers
-`*.test.ts(x)` colocalisés avec le code qu'ils couvrent.
+122 tests (26 fichiers) au moment du rapport final de M0. Le moteur
+(`engine/`, `sports/*/planning`, `sports/*/sessions`) est significativement
+plus testé que l'UI décorative — voir la stratégie de test dans
+`docs/adaptation-engine.md` (invariants) et les fichiers `*.test.ts(x)`
+colocalisés avec le code qu'ils couvrent. `src/simulation/scenarios.test.ts`
+fait tourner des scénarios athlète réalistes de bout en bout (§57 du brief
+produit) plutôt que de tester une fonction isolément.
 
 ## Roadmap actuelle
 
-En cours : **M0 — Le coach fonctionne** (voir `docs/roadmap.md` pour le
-détail milestone par milestone). Le produit s'arrête pour évaluation
-humaine à la fin de M0.12, avant toute considération de M1.
+**M0 — Le coach fonctionne — terminé** (M0.0 à M0.12, voir `docs/roadmap.md`
+pour le détail milestone par milestone). Le projet s'arrête ici pour
+évaluation humaine avant toute considération de M1 — voir le rapport final
+du projet pour le bilan complet, les limites connues et le blocage réseau
+sur le déploiement Vercel.
