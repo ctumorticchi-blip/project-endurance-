@@ -24,10 +24,12 @@ le contient pas.
 src/
   app/            Shell applicatif : router, layout racine, navigation
   config/         Configuration centralisée (branding, constantes globales)
-  core/           Modèles transverses : athlète, objectifs, disponibilités
-    athlete/
-    goals/
-    availability/
+  core/           Modèles transverses, indépendants du sport
+    athlete/      AthleteProfile
+    goals/        RaceGoal (référence le sport actif — voir note ci-dessous)
+    availability/ Availability, exceptions
+    training/     WorkoutBlock, PlannedSession, TrainingPlan/Phase/Week
+    history/      CompletedSession, SessionFeedback, ReadinessCheck
   engine/         Moteur de coaching, indépendant de React et du sport
     coach/        Orchestration : décide quoi montrer/faire aujourd'hui
     planning/     Génération de plan (périodisation à rebours)
@@ -57,12 +59,21 @@ une meilleure organisation se justifie, mais la séparation
 Le triathlon est aujourd'hui codé directement sous `sports/triathlon/`. La
 préparation à un futur `SportModule` générique se limite à :
 
-- Le moteur (`engine/*`) ne référence jamais de type spécifique triathlon
-  (pas de `import type { SwimSession } from '@/sports/triathlon/...'` dans
-  `engine/`). Il travaille sur des types génériques (`Session`, `Discipline`,
-  `TrainingWeek`, etc.) définis dans `core/` et `shared/types/`.
-- Les règles *spécifiques* triathlon (répartition natation/vélo/course,
-  bricks, transitions) vivent uniquement dans `sports/triathlon/`.
+- Les **formes de données génériques** (`Discipline`, `WorkoutBlock`,
+  `PlannedSession`, `TrainingWeek`/`TrainingPhase`/`TrainingPlan`,
+  `CompletedSession`, `SessionFeedback`, `ReadinessCheck`) vivent dans
+  `core/training/` et `core/history/` — elles ne sont pas spécifiques au
+  triathlon, un futur sport les réutilise telles quelles.
+- Le moteur (`engine/*`) travaille exclusivement sur ces types génériques.
+  Il ne référence jamais un type propre à un sport (ex. `TriathlonDistance`).
+- Ce qui est *spécifique* triathlon — le catalogue concret de séances
+  (`sports/triathlon/sessions`), la répartition natation/vélo/course, les
+  bricks/transitions, le modèle de distance (`sports/triathlon/domain`) —
+  vit uniquement sous `sports/triathlon/`, et *produit* des instances des
+  types génériques ci-dessus plutôt que d'inventer les siens.
+- Seule exception assumée en M0 : `core/goals/RaceGoal` référence
+  `TriathlonDistance` directement plutôt que de construire une abstraction
+  `SportModule` pour un seul sport (YAGNI, brief §37/§60).
 
 Nous ne construisons **pas** une abstraction `SportModule` générique
 maintenant (YAGNI, §37 du brief produit) — le vrai test de cette séparation
