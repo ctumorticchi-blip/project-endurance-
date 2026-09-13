@@ -56,3 +56,7 @@ export function findSessionForDate(
 export function allSessions(plan: TrainingPlan): PlannedSession[] {
   return plan.weeks.flatMap((w) => w.sessions)
 }
+
+export function findSessionById(plan: TrainingPlan, sessionId: string): PlannedSession | undefined {
+  return allSessions(plan).find((s) => s.id === sessionId)
+}

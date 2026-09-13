@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PlanPage } from '@/features/plan/PlanPage'
+import { SessionPlayerPage } from '@/features/session-player/SessionPlayerPage'
 import { TodayPage } from '@/features/today/TodayPage'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { RedirectIfOnboarded, RequireOnboarding } from './OnboardingGate'
@@ -14,12 +15,13 @@ const router = createBrowserRouter([
   {
     element: <RequireOnboarding />,
     children: [
+      { path: 'session/:sessionId', element: <SessionPlayerPage /> },
       {
-        path: 'session/:sessionId',
+        path: 'session/:sessionId/feedback',
         element: (
           <PlaceholderPage
-            title="Séance"
-            description="Le lecteur de séance arrive en M0.6."
+            title="Ressenti"
+            description="Le formulaire de feedback post-séance arrive en M0.7."
           />
         ),
       },
