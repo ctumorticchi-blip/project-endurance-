@@ -50,6 +50,9 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     disciplines = applyBrickInsertion(disciplines)
   }
 
+  // How many times each discipline has already been *assigned a session*
+  // so far this week — read before, and updated after, each slot decision,
+  // so "occurrence 0" reliably means "this discipline's anchor session".
   const occurrenceByDiscipline = new Map<Discipline, number>()
   const usedDates = new Set<string>()
   const sessions: PlannedSession[] = []
@@ -57,11 +60,10 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   for (let slot = 0; slot < disciplines.length; slot++) {
     const discipline = disciplines[slot]!
     const priority = WEEKLY_SLOT_PRIORITIES[slot] ?? 'optional'
-    const occurrence = occurrenceByDiscipline.get(discipline) ?? 0
-    occurrenceByDiscipline.set(discipline, occurrence + 1)
 
     let day = daysWithMinutes[slot]
-    let effectiveDiscipline = discipline
+    let effectiveDiscipline: Discipline = discipline
+    let effectiveOccurrence = occurrenceByDiscipline.get(discipline) ?? 0
 
     if (discipline === 'swim' && (!day || !day.pool)) {
       const poolDay = daysWithMinutes.find((d) => d.pool && !usedDates.has(d.date))
@@ -73,16 +75,13 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
         const bikeCount = occurrenceByDiscipline.get('bike') ?? 0
         const runCount = occurrenceByDiscipline.get('run') ?? 0
         effectiveDiscipline = runCount <= bikeCount ? 'run' : 'bike'
+        effectiveOccurrence = runCount <= bikeCount ? runCount : bikeCount
       }
     }
 
     if (!day || usedDates.has(day.date)) continue
     usedDates.add(day.date)
-
-    const effectiveOccurrence = occurrenceByDiscipline.get(effectiveDiscipline) ?? 0
-    if (effectiveDiscipline !== discipline) {
-      occurrenceByDiscipline.set(effectiveDiscipline, effectiveOccurrence + 1)
-    }
+    occurrenceByDiscipline.set(effectiveDiscipline, effectiveOccurrence + 1)
 
     const preferredType =
       effectiveDiscipline === 'bike' || effectiveDiscipline === 'run' || effectiveDiscipline === 'swim'
@@ -96,7 +95,16 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes)
     if (!template) continue
 
-    sessions.push(instantiateSessionTemplate(template, { date: day.date, weekId, priority }))
+    // A slot only earns "key" if it actually delivers the anchor stimulus.
+    // When time constraints degraded it all the way to a recovery-tier
+    // session, calling it "key" would contradict the explanation shown to
+    // the athlete (brief §51: cohérence sportive first).
+    const effectivePriority =
+      priority === 'key' && template.sessionType === 'recovery' ? 'secondary' : priority
+
+    sessions.push(
+      instantiateSessionTemplate(template, { date: day.date, weekId, priority: effectivePriority }),
+    )
   }
 
   return sessions.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
