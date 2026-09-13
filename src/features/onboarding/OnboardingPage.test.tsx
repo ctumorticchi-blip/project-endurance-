@@ -1,0 +1,82 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
+import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
+import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { OnboardingPage } from './OnboardingPage'
+
+function renderOnboarding() {
+  return render(
+    <MemoryRouter initialEntries={['/onboarding']}>
+      <Routes>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/today" element={<div>TODAY SCREEN</div>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
+describe('OnboardingPage', () => {
+  it('walks a full happy path and persists the three domain aggregates', async () => {
+    const user = userEvent.setup()
+    renderOnboarding()
+
+    // Step 1: race goal
+    await user.click(screen.getByLabelText(/Sprint/))
+    fireEvent.change(screen.getByLabelText('Date de la course'), {
+      target: { value: '2026-12-01' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Continuer' }))
+
+    // Step 2: experience — "Intermédiaire" is offered by 4 separate radio
+    // groups (general experience + swim/bike/run levels); select all of them.
+    const intermediateRadios = screen.getAllByRole('radio', { name: 'Intermédiaire' })
+    expect(intermediateRadios).toHaveLength(4)
+    for (const radio of intermediateRadios) await user.click(radio)
+    await user.click(screen.getByRole('radio', { name: /déjà fait quelques courses/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuer' }))
+
+    // Step 3: equipment (no required fields)
+    await user.click(screen.getByRole('button', { name: 'Continuer' }))
+
+    // Step 4: metrics (optional)
+    await user.click(screen.getByRole('button', { name: 'Continuer' }))
+
+    // Step 5: availability — need at least one day
+    const saturdayCheckbox = screen.getByRole('checkbox', { name: /Samedi/ })
+    await user.click(saturdayCheckbox)
+    const minutesInput = screen.getByLabelText('Minutes disponibles le Samedi')
+    await user.clear(minutesInput)
+    await user.type(minutesInput, '90')
+    await user.click(screen.getByRole('button', { name: 'Continuer' }))
+
+    // Step 6: review + submit
+    expect(screen.getByText('Vérifie ton profil')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Créer mon programme' }))
+
+    expect(await screen.findByText('TODAY SCREEN')).toBeInTheDocument()
+
+    const profile = AthleteProfileRepository.load()
+    const goal = RaceGoalRepository.load()
+    const availability = AvailabilityRepository.load()
+
+    expect(profile?.disciplineLevels).toEqual({
+      swim: 'intermediate',
+      bike: 'intermediate',
+      run: 'intermediate',
+    })
+    expect(goal).toEqual(expect.objectContaining({ distance: 'sprint', raceDate: '2026-12-01' }))
+    expect(availability?.weeklyPattern.saturday).toEqual({
+      available: true,
+      minutes: 90,
+      poolAccess: false,
+    })
+  })
+
+  it('keeps Continue disabled until the current step is valid', () => {
+    renderOnboarding()
+    expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled()
+  })
+})
