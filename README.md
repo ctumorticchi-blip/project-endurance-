@@ -1,2 +1,84 @@
-# project-endurance-
-Coach de sport perso 
+# Project Endurance
+
+> Nom de code interne. La marque commerciale définitive n'est pas encore
+> choisie — voir `src/config/brand.ts` pour l'identité centralisée.
+
+Une plateforme de coaching sportif individuel adaptatif. Premier sport :
+**triathlon**. « Ton entraînement s'adapte à ta progression, ta récupération
+et ta vraie vie. »
+
+Voir [`docs/product-vision.md`](docs/product-vision.md) pour la vision
+complète, et [`docs/roadmap.md`](docs/roadmap.md) pour la trajectoire M0→M10.
+
+## Stack
+
+- React 19 + TypeScript strict
+- Vite 8
+- React Router 7
+- Tailwind CSS 4
+- Vitest 5 + Testing Library
+- ESLint 10 + typescript-eslint
+
+## Installation
+
+```bash
+npm install
+```
+
+## Commandes
+
+```bash
+npm run dev         # serveur de développement
+npm run build        # build production (tsc -b && vite build)
+npm run preview      # prévisualiser le build
+npm run test         # tests (vitest run)
+npm run test:watch   # tests en mode watch
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run check        # typecheck + lint + test + build (à exécuter avant tout commit de milestone)
+```
+
+## Architecture
+
+```
+src/
+  app/       shell applicatif (router, layout)
+  config/    branding et configuration centralisée
+  core/      modèles transverses (athlète, objectifs, disponibilités)
+  engine/    moteur de coaching indépendant de React et du sport
+  sports/    modules sportifs (triathlon en M0)
+  features/  écrans applicatifs
+  shared/    storage, types, composants et utilitaires transverses
+```
+
+Détails complets : [`docs/architecture.md`](docs/architecture.md).
+
+Règle structurante : **la logique sportive ne dépend jamais de React** —
+`engine/` et `sports/` exposent des fonctions métier pures et testables
+(`generateTrainingPlan`, `adaptTrainingWeek`, `calculateZones`,
+`evaluateSession`, ...).
+
+## Documentation
+
+| Fichier | Contenu |
+|---|---|
+| [`docs/product-vision.md`](docs/product-vision.md) | Problème, promesse, cible, priorités |
+| [`docs/architecture.md`](docs/architecture.md) | Stack, structure des dossiers, persistance |
+| [`docs/training-philosophy.md`](docs/training-philosophy.md) | Philosophie sportive, explicabilité, sécurité |
+| [`docs/training-engine.md`](docs/training-engine.md) | Modèles de données, catalogue de séances, générateur de plan |
+| [`docs/adaptation-engine.md`](docs/adaptation-engine.md) | Moteur d'adaptation, reason codes, invariants |
+| [`docs/metrics.md`](docs/metrics.md) | Métriques par discipline, calibration, charge |
+| [`docs/roadmap.md`](docs/roadmap.md) | M0 détaillé + intention M1→M10 |
+
+## Tests
+
+Le moteur (`engine/`, `sports/*/planning`, `sports/*/sessions`) est
+significativement plus testé que l'UI décorative — voir la stratégie de
+test dans `docs/adaptation-engine.md` (invariants) et les fichiers
+`*.test.ts(x)` colocalisés avec le code qu'ils couvrent.
+
+## Roadmap actuelle
+
+En cours : **M0 — Le coach fonctionne** (voir `docs/roadmap.md` pour le
+détail milestone par milestone). Le produit s'arrête pour évaluation
+humaine à la fin de M0.12, avant toute considération de M1.
