@@ -1,6 +1,13 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { ReadinessLevel } from '@/core/history/ReadinessCheck'
+import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
+import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
+import type { AdaptationDecision } from '@/engine/adaptation/AdaptationDecision'
+import { applyDurationAdaptation, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
+import { decideAdaptation } from '@/engine/adaptation/decideAdaptation'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
@@ -26,6 +33,7 @@ function formatBlock(block: { label: string; durationSec?: number; distanceMeter
 }
 
 export function TodayPage() {
+  const [adaptation, setAdaptation] = useState<AdaptationDecision | null>(null)
   const plan = TrainingPlanRepository.load()
   const raceGoal = RaceGoalRepository.load()
 
@@ -35,6 +43,20 @@ export function TodayPage() {
 
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
+
+  const handleReadinessSelect = (level: ReadinessLevel) => {
+    if (!summary.session) return
+    const recentFeedback = [...SessionFeedbackRepository.loadAll()].reverse()
+    const result = decideAdaptation({ session: summary.session, readiness: level, recentFeedback })
+    AdaptationDecisionRepository.append(result)
+
+    if (result.type !== 'KEEP') {
+      const updatedSession = applyDurationAdaptation(summary.session, result)
+      TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
+    }
+
+    setAdaptation(result)
+  }
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
@@ -92,7 +114,17 @@ export function TodayPage() {
             </p>
           </section>
 
-          <ReadinessCheckIn date={today} plannedSessionId={summary.session.id} />
+          <ReadinessCheckIn
+            date={today}
+            plannedSessionId={summary.session.id}
+            onSelect={handleReadinessSelect}
+          />
+
+          {adaptation && adaptation.type !== 'KEEP' && (
+            <p role="status" className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
+              {adaptation.explanation}
+            </p>
+          )}
 
           <LinkButton to={`/session/${summary.session.id}`} className="w-full">
             Commencer

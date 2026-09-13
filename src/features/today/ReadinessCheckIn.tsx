@@ -12,9 +12,10 @@ const OPTIONS: { value: ReadinessLevel; label: string }[] = [
 interface ReadinessCheckInProps {
   date: DateISO
   plannedSessionId: string
+  onSelect?: (level: ReadinessLevel) => void
 }
 
-export function ReadinessCheckIn({ date, plannedSessionId }: ReadinessCheckInProps) {
+export function ReadinessCheckIn({ date, plannedSessionId, onSelect }: ReadinessCheckInProps) {
   const [selected, setSelected] = useState<ReadinessLevel | undefined>(() => {
     const existing = ReadinessCheckRepository.loadAll().find(
       (c) => c.date === date && c.plannedSessionId === plannedSessionId,
@@ -25,6 +26,7 @@ export function ReadinessCheckIn({ date, plannedSessionId }: ReadinessCheckInPro
   const handleSelect = (level: ReadinessLevel) => {
     setSelected(level)
     ReadinessCheckRepository.append(createReadinessCheck({ date, plannedSessionId, level }))
+    onSelect?.(level)
   }
 
   return (
