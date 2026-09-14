@@ -3,6 +3,8 @@ import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { TRAINING_PHASE_LABELS } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
+import { Badge } from '@/shared/components/Badge'
+import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
@@ -45,7 +47,7 @@ export function PlanPage() {
       </div>
 
       {plan.warnings.length > 0 && (
-        <div role="alert" className="flex flex-col gap-1 rounded-lg bg-warning/10 px-3 py-2">
+        <div role="alert" className="flex flex-col gap-1 rounded-[var(--radius-sm)] bg-warning/10 px-3 py-2">
           {plan.warnings.map((w) => (
             <p key={w} className="text-xs text-warning">
               {w}
@@ -56,10 +58,10 @@ export function PlanPage() {
 
       <ul className="flex flex-col gap-4">
         {plan.weeks.map((week) => (
-          <li key={week.id} className="rounded-lg border border-border bg-surface p-3">
+          <Card key={week.id} as="li">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold">
-                Semaine {week.weekNumber} · {TRAINING_PHASE_LABELS[week.phase]}
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                Semaine {week.weekNumber} <Badge>{TRAINING_PHASE_LABELS[week.phase]}</Badge>
               </span>
               <span className="text-xs text-text-muted">Charge {week.targetLoad}</span>
             </div>
@@ -78,7 +80,7 @@ export function PlanPage() {
                 ))}
               </ul>
             )}
-          </li>
+          </Card>
         ))}
       </ul>
     </div>

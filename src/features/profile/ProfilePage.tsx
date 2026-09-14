@@ -4,6 +4,7 @@ import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepositor
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
 import type { Zone } from '@/engine/calibration/zones'
+import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -57,7 +58,7 @@ export function ProfilePage() {
         </p>
       </div>
 
-      <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+      <Card className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold">Données de calibration</h2>
 
         <div className="flex items-center justify-between text-sm">
@@ -89,7 +90,7 @@ export function ProfilePage() {
         <Link to="/profile/tests/threshold" className="text-xs text-accent underline">
           Faire un test seuil
         </Link>
-      </section>
+      </Card>
 
       <button
         type="button"
@@ -100,7 +101,7 @@ export function ProfilePage() {
       </button>
 
       {showDetails && (
-        <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4">
+        <Card className="flex flex-col gap-4">
           {zones.heartRate && <ZoneTable title="Fréquence cardiaque" zones={zones.heartRate} unit="bpm" />}
           {zones.power && <ZoneTable title="Puissance vélo" zones={zones.power} unit="W" />}
           {zones.runPace && <ZoneTable title="Allure course" zones={zones.runPace} unit="s/km" />}
@@ -111,7 +112,7 @@ export function ProfilePage() {
               zones calculées.
             </p>
           )}
-        </section>
+        </Card>
       )}
     </div>
   )

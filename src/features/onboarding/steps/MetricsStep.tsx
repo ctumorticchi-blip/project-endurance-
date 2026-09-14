@@ -1,3 +1,4 @@
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import type { OnboardingDraft } from '../onboardingState'
 
 interface MetricsStepProps {
@@ -21,7 +22,7 @@ function numberField(
         min={0}
         value={value ?? ''}
         onChange={(e) => onValue(e.target.value === '' ? undefined : Number(e.target.value))}
-        className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+        className={INPUT_CLASSES}
       />
     </label>
   )

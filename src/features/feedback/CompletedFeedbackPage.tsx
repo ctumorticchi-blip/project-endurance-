@@ -8,6 +8,8 @@ import { findSessionById } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { Button } from '@/shared/components/Button'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 const DIFFICULTY_CHOICES: { value: PerceivedDifficulty; label: string }[] = [
@@ -60,16 +62,15 @@ export function CompletedFeedbackPage() {
         <p className="text-sm text-text-muted">{session.title}</p>
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Durée réelle (minutes)</span>
+      <Field label="Durée réelle (minutes)">
         <input
           type="number"
           min={0}
           value={actualDurationMin}
           onChange={(e) => setActualDurationMin(Number(e.target.value))}
-          className="w-24 rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={`w-24 ${INPUT_CLASSES}`}
         />
-      </label>
+      </Field>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">RPE (effort ressenti, 1-10)</legend>
@@ -80,7 +81,7 @@ export function CompletedFeedbackPage() {
               type="button"
               aria-pressed={rpe === value}
               onClick={() => setRpe(value)}
-              className={`rounded-lg border py-2 text-sm font-medium ${
+              className={`rounded-[var(--radius-sm)] border py-2 text-sm font-medium ${
                 rpe === value ? 'border-primary bg-surface-muted text-primary' : 'border-border bg-surface'
               }`}
             >
@@ -98,15 +99,14 @@ export function CompletedFeedbackPage() {
         onChange={setDifficulty}
       />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Commentaire (optionnel)</span>
+      <Field label="Commentaire (optionnel)">
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
       <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
         Enregistrer

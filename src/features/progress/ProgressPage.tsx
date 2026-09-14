@@ -4,7 +4,9 @@ import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackReposit
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import { buildProgressSummary } from '@/engine/history/buildProgressSummary'
+import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { StatTile } from '@/shared/components/StatTile'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
   swim: 'Natation',
@@ -37,29 +39,29 @@ export function ProgressPage() {
     <div className="flex flex-col gap-5 px-4 py-6">
       <div>
         <h1 className="text-lg font-semibold">Ton progrès</h1>
-        <p className="text-sm text-text-muted">
-          {summary.totalCompletedSessions} séance{summary.totalCompletedSessions === 1 ? '' : 's'}{' '}
-          enregistrée{summary.totalCompletedSessions === 1 ? '' : 's'} · {Math.round(summary.totalMinutes / 60)} h
-          au total
-        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <StatTile
+          label="Séances enregistrées"
+          value={String(summary.totalCompletedSessions)}
+        />
+        <StatTile label="Temps total" value={`${Math.round(summary.totalMinutes / 60)} h`} />
+        {summary.consistencyRate !== undefined && (
+          <StatTile
+            label="Régularité"
+            value={`${Math.round(summary.consistencyRate * 100)}%`}
+            hint="séances réalisées récemment"
+          />
+        )}
       </div>
 
       <section>
         <h2 className="mb-1 text-sm font-semibold">Ce que j'ai appris</h2>
-        <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-text-muted">
+        <Card variant="muted" className="text-sm text-text-muted">
           {summary.learnedInsight}
-        </p>
+        </Card>
       </section>
-
-      {summary.consistencyRate !== undefined && (
-        <section>
-          <h2 className="mb-1 text-sm font-semibold">Régularité</h2>
-          <p className="text-sm text-text-muted">
-            {Math.round(summary.consistencyRate * 100)}% des séances prévues ont été réalisées
-            (complètes ou partielles) récemment.
-          </p>
-        </section>
-      )}
 
       {disciplineEntries.length > 0 && (
         <section>
@@ -80,12 +82,14 @@ export function ProgressPage() {
           <h2 className="mb-2 text-sm font-semibold">Derniers ajustements du programme</h2>
           <ul className="flex flex-col gap-2">
             {summary.recentAdaptations.map((decision, i) => (
-              <li
+              <Card
                 key={`${decision.sessionId}-${decision.type}-${i}`}
-                className="rounded-lg bg-surface-muted px-3 py-2 text-xs text-text-muted"
+                as="li"
+                variant="muted"
+                className="text-xs text-text-muted"
               >
                 {decision.explanation}
-              </li>
+              </Card>
             ))}
           </ul>
         </section>

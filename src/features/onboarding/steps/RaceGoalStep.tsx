@@ -1,4 +1,6 @@
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { TRIATHLON_DISTANCES, type TriathlonDistance } from '@/sports/triathlon/domain/distance'
 import { weeksUntilRace } from '@/core/goals/RaceGoal'
 import type { OnboardingDraft } from '../onboardingState'
@@ -38,18 +40,17 @@ export function RaceGoalStep({ draft, onChange }: RaceGoalStepProps) {
         onChange={(value) => onChange({ distance: value })}
       />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Date de la course</span>
+      <Field label="Date de la course">
         <input
           type="date"
           value={draft.raceDate ?? ''}
           onChange={(e) => onChange({ raceDate: e.target.value })}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
       {tooSoon && (
-        <p role="alert" className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+        <p role="alert" className="rounded-[var(--radius-sm)] bg-warning/10 px-3 py-2 text-xs text-warning">
           Attention : {weeks} semaine{weeks === 1 ? '' : 's'} avant la course, c'est court pour un{' '}
           {spec?.label}. Le programme te préviendra si le rythme devient trop agressif.
         </p>

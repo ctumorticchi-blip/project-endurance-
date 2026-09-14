@@ -1,3 +1,5 @@
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import type { OnboardingDraft } from '../onboardingState'
 
 interface EquipmentStepProps {
@@ -17,7 +19,7 @@ export function EquipmentStep({ draft, onChange }: EquipmentStepProps) {
         </p>
       </div>
 
-      <label className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-3">
+      <label className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-3">
         <input
           type="checkbox"
           checked={equipment.hasPoolAccess}
@@ -29,27 +31,28 @@ export function EquipmentStep({ draft, onChange }: EquipmentStepProps) {
       </label>
 
       {equipment.hasPoolAccess && (
-        <label className="ml-6 flex flex-col gap-1">
-          <span className="text-sm font-medium">Combien de jours par semaine ?</span>
-          <input
-            type="number"
-            min={0}
-            max={7}
-            value={equipment.poolDaysPerWeek ?? ''}
-            onChange={(e) =>
-              onChange({
-                equipment: {
-                  ...equipment,
-                  poolDaysPerWeek: e.target.value === '' ? undefined : Number(e.target.value),
-                },
-              })
-            }
-            className="w-24 rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          />
-        </label>
+        <div className="ml-6">
+          <Field label="Combien de jours par semaine ?">
+            <input
+              type="number"
+              min={0}
+              max={7}
+              value={equipment.poolDaysPerWeek ?? ''}
+              onChange={(e) =>
+                onChange({
+                  equipment: {
+                    ...equipment,
+                    poolDaysPerWeek: e.target.value === '' ? undefined : Number(e.target.value),
+                  },
+                })
+              }
+              className={`w-24 ${INPUT_CLASSES}`}
+            />
+          </Field>
+        </div>
       )}
 
-      <label className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-3">
+      <label className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-3">
         <input
           type="checkbox"
           checked={equipment.hasBike}
@@ -58,7 +61,7 @@ export function EquipmentStep({ draft, onChange }: EquipmentStepProps) {
         <span className="text-sm">J'ai un vélo</span>
       </label>
 
-      <label className="flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-3">
+      <label className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-border bg-surface px-3 py-3">
         <input
           type="checkbox"
           checked={equipment.hasHomeTrainer}

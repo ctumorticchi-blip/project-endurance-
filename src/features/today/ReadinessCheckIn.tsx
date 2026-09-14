@@ -39,7 +39,7 @@ export function ReadinessCheckIn({ date, plannedSessionId, onSelect }: Readiness
             type="button"
             aria-pressed={selected === option.value}
             onClick={() => handleSelect(option.value)}
-            className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium ${
+            className={`flex-1 rounded-[var(--radius-sm)] border px-2 py-2 text-xs font-medium ${
               selected === option.value
                 ? 'border-primary bg-surface-muted text-primary'
                 : 'border-border bg-surface text-text'

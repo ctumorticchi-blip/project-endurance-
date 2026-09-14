@@ -15,19 +15,46 @@ export const brand = {
     'Un coach numérique personnel pour sportifs d’endurance : programme adaptatif, explicable, et centré sur ta vraie vie.',
   domainVersion: 1,
   colors: {
-    // Premium / sporty / calm / precise. Kept intentionally small: a
-    // full design system arrives in M1.
+    // Premium / sporty / calm / precise.
     background: '#0B0F14',
     surface: '#121821',
     surfaceMuted: '#1A222E',
+    surfaceRaised: '#1B2330',
     primary: '#3DDC97',
     primaryMuted: '#245C43',
     accent: '#4EA1FF',
     text: '#F4F7FA',
     textMuted: '#9AA7B4',
+    textFaint: '#5C6774',
     border: '#26303C',
+    borderStrong: '#37455A',
     warning: '#F2B84B',
     danger: '#F2665C',
+  },
+  /**
+   * A deliberate, network-independent type stack: a humanist sans for
+   * clarity at a glance (falls back cleanly if the named face isn't
+   * installed — no webfont fetch, no FOUT, no external dependency) and
+   * tabular numerals for anything a user reads as a live-updating metric
+   * (timers, paces, watts).
+   */
+  typography: {
+    sans: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+    numeric: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+  },
+  /** 4px base scale, named rather than referenced by raw Tailwind numbers
+   * wherever spacing carries semantic meaning (card padding, section gaps). */
+  spacing: {
+    xs: '0.5rem',
+    sm: '0.75rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+  },
+  radius: {
+    sm: '0.5rem',
+    md: '0.75rem',
+    lg: '1rem',
   },
   metadata: {
     titleSuffix: ' · Project Endurance',

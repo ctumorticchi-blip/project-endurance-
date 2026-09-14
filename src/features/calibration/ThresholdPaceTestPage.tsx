@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { computeThresholdPaceSecPerKm } from '@/engine/calibration/computeThresholdPaceFromTest'
 import { Button } from '@/shared/components/Button'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 const TEST_DURATION_SEC = 20 * 60
@@ -60,16 +62,15 @@ export function ThresholdPaceTestPage() {
         </p>
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Distance parcourue en 20 minutes (mètres)</span>
+      <Field label="Distance parcourue en 20 minutes (mètres)">
         <input
           type="number"
           min={0}
           value={distanceMeters}
           onChange={(e) => setDistanceMeters(e.target.value === '' ? '' : Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
       <Button
         onClick={handleSubmit}

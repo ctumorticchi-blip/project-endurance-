@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { computeCssSecPer100m } from '@/engine/calibration/computeCssFromTest'
 import { Button } from '@/shared/components/Button'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 export function CssTestPage() {
@@ -61,27 +63,25 @@ export function CssTestPage() {
         </p>
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Temps du 400m (secondes)</span>
+      <Field label="Temps du 400m (secondes)">
         <input
           type="number"
           min={0}
           value={time400}
           onChange={(e) => setTime400(e.target.value === '' ? '' : Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Temps du 200m (secondes)</span>
+      <Field label="Temps du 200m (secondes)">
         <input
           type="number"
           min={0}
           value={time200}
           onChange={(e) => setTime200(e.target.value === '' ? '' : Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
       {error && (
         <p role="alert" className="text-xs text-danger">

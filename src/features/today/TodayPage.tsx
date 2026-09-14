@@ -9,6 +9,8 @@ import type { AdaptationDecision } from '@/engine/adaptation/AdaptationDecision'
 import { applyDurationAdaptation, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
 import { decideAdaptation, decideAvailabilityConstraint } from '@/engine/adaptation/decideAdaptation'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
+import { Badge } from '@/shared/components/Badge'
+import { Card } from '@/shared/components/Card'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
@@ -23,6 +25,18 @@ const DISCIPLINE_LABELS: Record<string, string> = {
   mobility: 'Mobilité',
   brick: 'Brick',
 }
+
+const PRIORITY_LABELS: Record<string, string> = {
+  key: 'Clé',
+  secondary: 'Secondaire',
+  optional: 'Optionnelle',
+}
+
+const PRIORITY_TONE = {
+  key: 'primary',
+  secondary: 'neutral',
+  optional: 'neutral',
+} as const
 
 function formatBlock(block: { label: string; durationSec?: number; distanceMeters?: number; repeat?: number; restSec?: number; note?: string }) {
   const parts: string[] = []
@@ -83,21 +97,21 @@ export function TodayPage() {
 
       {summary.session ? (
         <>
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs font-medium text-text-muted">
-              {DISCIPLINE_LABELS[summary.session.discipline]}
-            </p>
+          <Card>
+            <div className="mb-1 flex items-center justify-between">
+              <p className="text-xs font-medium text-text-muted">
+                {DISCIPLINE_LABELS[summary.session.discipline]}
+              </p>
+              <Badge tone={PRIORITY_TONE[summary.session.priority]}>
+                {PRIORITY_LABELS[summary.session.priority]}
+              </Badge>
+            </div>
             <h2 className="text-base font-semibold">{summary.session.title}</h2>
             <p className="mt-1 text-sm text-text-muted">
               {summary.session.estimatedDurationMin} min · Charge prévue{' '}
-              {Math.round(summary.session.estimatedDurationMin)} · Priorité{' '}
-              {summary.session.priority === 'key'
-                ? 'clé'
-                : summary.session.priority === 'secondary'
-                  ? 'secondaire'
-                  : 'optionnelle'}
+              {Math.round(summary.session.estimatedDurationMin)}
             </p>
-          </div>
+          </Card>
 
           <section>
             <h3 className="mb-1 text-sm font-semibold">Objectif</h3>
@@ -108,7 +122,7 @@ export function TodayPage() {
             <h3 className="mb-2 text-sm font-semibold">Structure</h3>
             <ol className="flex flex-col gap-2">
               {summary.session.blocks.map((block) => (
-                <li key={block.id} className="rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                <Card key={block.id} as="li" variant="muted" className="text-sm">
                   <p className="font-medium">{block.label}</p>
                   <p className="text-xs text-text-muted">
                     {formatBlock(block)}
@@ -116,16 +130,16 @@ export function TodayPage() {
                     {block.targetRpeMax}
                   </p>
                   {block.note && <p className="mt-1 text-xs text-text-muted">{block.note}</p>}
-                </li>
+                </Card>
               ))}
             </ol>
           </section>
 
           <section>
             <h3 className="mb-1 text-sm font-semibold">Pourquoi cette séance ?</h3>
-            <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-text-muted">
+            <Card variant="muted" className="text-sm text-text-muted">
               {summary.explanation}
-            </p>
+            </Card>
           </section>
 
           <ReadinessCheckIn
@@ -135,7 +149,7 @@ export function TodayPage() {
           />
 
           {adaptation && adaptation.type !== 'KEEP' && (
-            <p role="status" className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
+            <p role="status" className="rounded-[var(--radius-sm)] bg-accent/10 px-3 py-2 text-sm text-accent">
               {adaptation.explanation}
             </p>
           )}
@@ -154,10 +168,10 @@ export function TodayPage() {
           </Link>
         </>
       ) : (
-        <div className="rounded-lg border border-border bg-surface p-4">
+        <Card>
           <h2 className="text-base font-semibold">Jour de repos</h2>
           <p className="mt-2 text-sm text-text-muted">{summary.explanation}</p>
-        </div>
+        </Card>
       )}
     </div>
   )

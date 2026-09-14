@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { computeFtpFromTwentyMinuteTest } from '@/engine/calibration/computeFtpFromTest'
 import { Button } from '@/shared/components/Button'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 
 export function FtpTestPage() {
@@ -55,16 +57,15 @@ export function FtpTestPage() {
         </p>
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Puissance moyenne sur les 20 minutes (watts)</span>
+      <Field label="Puissance moyenne sur les 20 minutes (watts)">
         <input
           type="number"
           min={0}
           value={avgWatts}
           onChange={(e) => setAvgWatts(e.target.value === '' ? '' : Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
 
       <Button onClick={handleSubmit} disabled={avgWatts === '' || avgWatts <= 0} className="w-full">
         Calculer ma FTP

@@ -69,6 +69,8 @@ Règle structurante : **la logique sportive ne dépend jamais de React** —
 | [`docs/adaptation-engine.md`](docs/adaptation-engine.md) | Moteur d'adaptation, reason codes, invariants |
 | [`docs/metrics.md`](docs/metrics.md) | Métriques par discipline, calibration, charge |
 | [`docs/roadmap.md`](docs/roadmap.md) | M0 détaillé + intention M1→M10 |
+| [`docs/design-system.md`](docs/design-system.md) | Tokens, typographie, composants partagés (M1.0) |
+| [`docs/m0-final-report.md`](docs/m0-final-report.md) | Bilan complet de M0 |
 
 ## Tests
 

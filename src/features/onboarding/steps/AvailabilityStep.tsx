@@ -1,3 +1,5 @@
+import { Card } from '@/shared/components/Card'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { WEEKDAYS, type Weekday } from '@/shared/types/common'
 import type { OnboardingDraft } from '../onboardingState'
 
@@ -40,7 +42,7 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
         {WEEKDAYS.map((day) => {
           const dayState = draft.weeklyPattern[day]
           return (
-            <li key={day} className="rounded-lg border border-border bg-surface px-3 py-3">
+            <Card key={day} as="li" className="py-3">
               <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -58,7 +60,7 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
                       aria-label={`Minutes disponibles le ${WEEKDAY_LABELS[day]}`}
                       value={dayState.minutes || ''}
                       onChange={(e) => setDay(day, { minutes: Number(e.target.value) || 0 })}
-                      className="w-20 rounded-md border border-border bg-background px-2 py-1 text-sm"
+                      className={`w-20 px-2 py-1 ${INPUT_CLASSES}`}
                     />
                     <span className="text-xs text-text-muted">min</span>
                   </>
@@ -74,7 +76,7 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
                   Piscine accessible ce jour-là
                 </label>
               )}
-            </li>
+            </Card>
           )
         })}
       </ul>

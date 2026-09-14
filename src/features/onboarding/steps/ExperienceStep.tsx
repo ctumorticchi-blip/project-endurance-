@@ -1,4 +1,6 @@
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
+import { Field } from '@/shared/components/Field'
+import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import type { Level } from '@/shared/types/common'
 import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
 import type { OnboardingDraft } from '../onboardingState'
@@ -70,10 +72,7 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
         onChange={(value) => onChange({ runLevel: value })}
       />
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">
-          Volume hebdomadaire récent (heures) — optionnel
-        </span>
+      <Field label="Volume hebdomadaire récent (heures) — optionnel">
         <input
           type="number"
           min={0}
@@ -84,9 +83,9 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
               recentWeeklyVolumeHours: e.target.value === '' ? undefined : Number(e.target.value),
             })
           }
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+          className={INPUT_CLASSES}
         />
-      </label>
+      </Field>
     </div>
   )
 }

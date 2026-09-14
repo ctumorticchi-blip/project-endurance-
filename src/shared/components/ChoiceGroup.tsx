@@ -27,7 +27,7 @@ export function ChoiceGroup<T extends string>({
       {choices.map((choice) => (
         <label
           key={choice.value}
-          className={`flex cursor-pointer flex-col rounded-lg border px-3 py-2 ${
+          className={`flex cursor-pointer flex-col rounded-[var(--radius-sm)] border px-3 py-2 transition-colors ${
             value === choice.value
               ? 'border-primary bg-surface-muted'
               : 'border-border bg-surface'
