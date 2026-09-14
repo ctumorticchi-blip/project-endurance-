@@ -4,6 +4,7 @@ import { createAthleteProfile } from './AthleteProfile'
 describe('createAthleteProfile', () => {
   it('generates a unique id and createdAt timestamp', () => {
     const profile = createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'beginner',
       triathlonExperience: 'first-triathlon',
       disciplineLevels: { swim: 'beginner', bike: 'beginner', run: 'beginner' },
@@ -19,6 +20,7 @@ describe('createAthleteProfile', () => {
 
   it('does not require any known metric', () => {
     const profile = createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'advanced',
       triathlonExperience: 'experienced',
       disciplineLevels: { swim: 'advanced', bike: 'advanced', run: 'advanced' },
@@ -32,6 +34,7 @@ describe('createAthleteProfile', () => {
 
   it('does not require any biometric', () => {
     const profile = createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'advanced',
       triathlonExperience: 'experienced',
       disciplineLevels: { swim: 'advanced', bike: 'advanced', run: 'advanced' },
@@ -45,6 +48,7 @@ describe('createAthleteProfile', () => {
 
   it('accepts a declared sex, height and weight', () => {
     const profile = createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'intermediate',
       triathlonExperience: 'some-races',
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },

@@ -1,9 +1,9 @@
 import { weeksUntilRace } from '@/core/goals/RaceGoal'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { getRaceDistanceLabel } from '@/core/goals/raceGoalDisplay'
 import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
 import { findWeekForDate } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
-import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
 import { WeekCard } from './WeekCard'
@@ -26,7 +26,7 @@ export function PlanPage() {
     )
   }
 
-  const distanceSpec = TRIATHLON_DISTANCES[raceGoal.distance]
+  const distanceLabel = getRaceDistanceLabel(raceGoal)
   const weeksLeft = weeksUntilRace(raceGoal.raceDate)
   const currentWeek = findWeekForDate(plan, toISODate(new Date()))
 
@@ -35,7 +35,7 @@ export function PlanPage() {
       <div>
         <h1 className="text-lg font-semibold">Ton programme</h1>
         <p className="text-sm text-text-muted">
-          {distanceSpec.label} le {formatDate(raceGoal.raceDate)} · {weeksLeft} semaine
+          {distanceLabel} le {formatDate(raceGoal.raceDate)} · {weeksLeft} semaine
           {weeksLeft === 1 ? '' : 's'} restante{weeksLeft === 1 ? '' : 's'}
         </p>
       </div>

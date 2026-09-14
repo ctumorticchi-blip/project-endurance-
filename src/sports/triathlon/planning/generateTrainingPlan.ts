@@ -1,5 +1,5 @@
 import type { Availability } from '@/core/availability/Availability'
-import { daysUntilRace, type RaceGoal } from '@/core/goals/RaceGoal'
+import { daysUntilRace, type TriathlonRaceGoal } from '@/core/goals/RaceGoal'
 import { createTrainingPlan, type TrainingPhaseName, type TrainingPlan, type TrainingWeek } from '@/core/training/TrainingPlan'
 import { estimateWeekLoad } from '@/engine/metrics/load'
 import { addDays, toISODate } from '@/shared/utils/date'
@@ -8,7 +8,7 @@ import { buildWeekSessions } from './buildWeekSessions'
 import { allocatePhases } from './phaseAllocation'
 
 export interface GenerateTrainingPlanInput {
-  raceGoal: RaceGoal
+  raceGoal: TriathlonRaceGoal
   availability: Availability
   today?: Date
 }

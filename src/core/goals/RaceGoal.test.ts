@@ -2,9 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { createRaceGoal, daysUntilRace, weeksUntilRace } from './RaceGoal'
 
 describe('createRaceGoal', () => {
-  it('stamps sport, id and createdAt', () => {
-    const goal = createRaceGoal({ distance: 'sprint', raceDate: '2026-12-01' })
+  it('stamps id and createdAt for a triathlon goal', () => {
+    const goal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-12-01' })
     expect(goal.sport).toBe('triathlon')
+    expect(goal.id).toBeTruthy()
+    expect(goal.createdAt).toBeTruthy()
+  })
+
+  it('stamps id and createdAt for a running goal', () => {
+    const goal = createRaceGoal({ sport: 'running', distance: '10k', raceDate: '2026-12-01' })
+    expect(goal.sport).toBe('running')
     expect(goal.id).toBeTruthy()
     expect(goal.createdAt).toBeTruthy()
   })

@@ -1,27 +1,41 @@
 import type { TriathlonDistance } from '@/sports/triathlon/domain/distance'
+import type { RunningDistance } from '@/sports/running/domain/distance'
 import type { DateISO } from '@/shared/types/common'
 
-/**
- * `sport` is a literal union of one value on purpose: it documents that a
- * future sport would add a member here (and its own distance type) without
- * a premature generic `SportModule` abstraction (YAGNI — brief §37/§60).
- */
-export interface RaceGoal {
+interface RaceGoalBase {
   id: string
-  sport: 'triathlon'
-  distance: TriathlonDistance
   raceDate: DateISO
   raceName?: string
   createdAt: string
 }
 
+export interface TriathlonRaceGoal extends RaceGoalBase {
+  sport: 'triathlon'
+  distance: TriathlonDistance
+}
+
+export interface RunningRaceGoal extends RaceGoalBase {
+  sport: 'running'
+  distance: RunningDistance
+}
+
+/**
+ * A discriminated union on `sport` — the shape the original one-sport
+ * comment on this file anticipated ("a future sport would add a member
+ * here"). Every consumer that needs the distance spec table (labels,
+ * warnings, race-day nutrition guidance) must narrow on `sport` first —
+ * see `core/goals/raceGoalDisplay.ts` for the one shared place that does.
+ */
+export type RaceGoal = TriathlonRaceGoal | RunningRaceGoal
+
+export function createRaceGoal(input: Omit<TriathlonRaceGoal, 'id' | 'createdAt'>): TriathlonRaceGoal
+export function createRaceGoal(input: Omit<RunningRaceGoal, 'id' | 'createdAt'>): RunningRaceGoal
 export function createRaceGoal(
-  input: Omit<RaceGoal, 'id' | 'sport' | 'createdAt'>,
+  input: Omit<TriathlonRaceGoal, 'id' | 'createdAt'> | Omit<RunningRaceGoal, 'id' | 'createdAt'>,
 ): RaceGoal {
   return {
     ...input,
     id: crypto.randomUUID(),
-    sport: 'triathlon',
     createdAt: new Date().toISOString(),
   }
 }

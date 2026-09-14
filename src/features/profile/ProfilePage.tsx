@@ -107,10 +107,10 @@ export function ProfilePage() {
       <div>
         <h1 className="text-lg font-semibold">Ton profil</h1>
         <p className="text-sm text-text-muted">
-          Expérience {LEVEL_LABELS[profile.generalSportExperience]} · Natation{' '}
-          {LEVEL_LABELS[profile.disciplineLevels.swim]} · Vélo{' '}
-          {LEVEL_LABELS[profile.disciplineLevels.bike]} · Course{' '}
-          {LEVEL_LABELS[profile.disciplineLevels.run]}
+          Expérience {LEVEL_LABELS[profile.generalSportExperience]}
+          {profile.disciplineLevels.swim && ` · Natation ${LEVEL_LABELS[profile.disciplineLevels.swim]}`}
+          {profile.disciplineLevels.bike && ` · Vélo ${LEVEL_LABELS[profile.disciplineLevels.bike]}`}
+          {` · Course ${LEVEL_LABELS[profile.disciplineLevels.run]}`}
         </p>
         {biometricsParts.length > 0 && (
           <p className="mt-1 text-sm text-text-muted">{biometricsParts.join(' · ')}</p>

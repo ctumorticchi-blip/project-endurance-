@@ -60,9 +60,10 @@ describe('Scenario A — Triathlon Sprint, intermediate, ~12 weeks, 5 sessions/w
   it('generates a coherent plan and survives a missed session + fatigue signal', () => {
     const today = new Date('2026-01-05T00:00:00') // Monday
     const raceDate = '2026-03-30' // ~12 weeks out
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate })
     const availability = fullAvailability(5, 75)
     createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'intermediate',
       triathlonExperience: 'some-races',
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
@@ -109,7 +110,7 @@ describe('Scenario B — Triathlon Olympic ("M"), intermediate, ~20 weeks, 6 ses
   it('generates a coherent plan with a 2-week taper and a good-session signal', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceDate = '2026-05-25' // ~20 weeks out
-    const raceGoal = createRaceGoal({ distance: 'olympic', raceDate })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate })
     const availability = fullAvailability(6, 60)
 
     const { plan } = generateTrainingPlan({ raceGoal, availability, today })
@@ -140,7 +141,7 @@ describe('Scenario C — first Sprint, low volume, 3-4 sessions/week', () => {
   it('respects the beginner minimum-runway warning and still produces a safe plan', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceDate = '2026-02-16' // ~6 weeks out — below the recommended 8-week minimum for a first Sprint.
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate })
     const availability = fullAvailability(3, 45)
 
     const { plan, warnings } = generateTrainingPlan({ raceGoal, availability, today })
@@ -165,7 +166,7 @@ describe('Scenario D — athlete with many availability constraints', () => {
   it('handles a mid-cycle unavailable day and a reduced-time day without breaking invariants', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceDate = '2026-04-13'
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate })
     const availability: Availability = {
       ...fullAvailability(4, 50, false),
       exceptions: [

@@ -28,6 +28,17 @@ export function EditAvailabilityPage() {
     )
   }
 
+  if (raceGoal.sport !== 'triathlon') {
+    // TODO(RUN-5): branch regeneratePlanFromToday by sport once a running
+    // plan generator exists (RUN-3) — for now this screen stays triathlon-only.
+    return (
+      <PlaceholderPage
+        title="Disponibilités"
+        description="La modification des disponibilités arrive bientôt pour les programmes course à pied."
+      />
+    )
+  }
+
   const setDay = (day: Weekday, patch: Partial<DayAvailability>) => {
     setDraft({ ...draft, weeklyPattern: { ...draft.weeklyPattern, [day]: { ...draft.weeklyPattern[day], ...patch } } })
   }

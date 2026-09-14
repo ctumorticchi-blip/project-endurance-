@@ -11,6 +11,7 @@ import App from './App'
 function completeOnboardingInStorage() {
   AthleteProfileRepository.save(
     createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'intermediate',
       triathlonExperience: 'some-races',
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
@@ -19,7 +20,7 @@ function completeOnboardingInStorage() {
       biometrics: {},
     }),
   )
-  RaceGoalRepository.save(createRaceGoal({ distance: 'sprint', raceDate: '2026-12-01' }))
+  RaceGoalRepository.save(createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-12-01' }))
   const pattern = createEmptyWeeklyPattern()
   pattern.saturday = { available: true, minutes: 90, poolAccess: false }
   AvailabilityRepository.save({ weeklyPattern: pattern, exceptions: [] })

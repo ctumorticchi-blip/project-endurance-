@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { daysUntilRace } from '@/core/goals/RaceGoal'
-import { createSecondaryRaceGoal } from '@/core/goals/SecondaryRaceGoal'
+import { createSecondaryRaceGoal, type SecondaryRaceGoal } from '@/core/goals/SecondaryRaceGoal'
 import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
+import { RUNNING_DISTANCES, type RunningDistance } from '@/sports/running/domain/distance'
 import { TRIATHLON_DISTANCES, type TriathlonDistance } from '@/sports/triathlon/domain/distance'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
@@ -10,15 +11,25 @@ import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { toISODate } from '@/shared/utils/date'
 
-type DistanceChoice = TriathlonDistance | 'unspecified'
+type DistanceChoice = `triathlon:${TriathlonDistance}` | `running:${RunningDistance}` | 'unspecified'
 
 const DISTANCE_CHOICES: { value: DistanceChoice; label: string }[] = [
   ...(Object.keys(TRIATHLON_DISTANCES) as TriathlonDistance[]).map((value) => ({
-    value,
-    label: TRIATHLON_DISTANCES[value].label,
+    value: `triathlon:${value}` as const,
+    label: `Triathlon ${TRIATHLON_DISTANCES[value].label}`,
+  })),
+  ...(Object.keys(RUNNING_DISTANCES) as RunningDistance[]).map((value) => ({
+    value: `running:${value}` as const,
+    label: `Course à pied — ${RUNNING_DISTANCES[value].label}`,
   })),
   { value: 'unspecified', label: 'Non précisée' },
 ]
+
+function getSecondaryDistanceLabel(race: SecondaryRaceGoal): string | undefined {
+  if (!race.distance) return undefined
+  if (race.sport === 'running') return RUNNING_DISTANCES[race.distance as RunningDistance].label
+  return TRIATHLON_DISTANCES[race.distance as TriathlonDistance].label
+}
 
 function formatDate(dateISO: string): string {
   return new Date(dateISO).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -49,11 +60,14 @@ export function SecondaryRaceGoalsSection() {
 
   const handleAdd = () => {
     if (!canAdd) return
+    const [sport, rawDistance] =
+      distance && distance !== 'unspecified' ? (distance.split(':') as ['triathlon' | 'running', string]) : [undefined, undefined]
     SecondaryRaceGoalRepository.append(
       createSecondaryRaceGoal({
         raceName: name.trim(),
         raceDate: date,
-        distance: distance && distance !== 'unspecified' ? distance : undefined,
+        sport,
+        distance: rawDistance as TriathlonDistance | RunningDistance | undefined,
       }),
     )
     setRaces(SecondaryRaceGoalRepository.loadAll())
@@ -95,7 +109,7 @@ export function SecondaryRaceGoalsSection() {
                   <p className="font-medium">{race.raceName}</p>
                   <p className="text-xs text-text-muted">
                     {formatDate(race.raceDate)}
-                    {race.distance ? ` · ${TRIATHLON_DISTANCES[race.distance].label}` : ''}
+                    {getSecondaryDistanceLabel(race) ? ` · ${getSecondaryDistanceLabel(race)}` : ''}
                     {isPast ? ' · Passée' : ` · J-${daysUntilRace(race.raceDate)}`}
                   </p>
                 </div>

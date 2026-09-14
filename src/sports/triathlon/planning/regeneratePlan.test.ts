@@ -16,7 +16,7 @@ function fullAvailability(restDays: Availability['restDays'] = ['sunday']): Avai
 describe('regeneratePlanFromToday', () => {
   it('keeps every week strictly before the current one untouched', () => {
     const today = new Date('2026-01-05T00:00:00') // a Monday
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-03-30' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
     const { plan: originalPlan } = generateTrainingPlan({ raceGoal, availability: fullAvailability(), today })
 
     // Pretend two weeks have already elapsed since the plan was created.
@@ -34,7 +34,7 @@ describe('regeneratePlanFromToday', () => {
 
   it('applies the new availability from the current week onward', () => {
     const today = new Date('2026-01-05T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-03-30' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
     const { plan: originalPlan } = generateTrainingPlan({ raceGoal, availability: fullAvailability(['sunday']), today })
 
     const twoWeeksLater = new Date('2026-01-19T00:00:00')
@@ -56,7 +56,7 @@ describe('regeneratePlanFromToday', () => {
 
   it('renumbers weeks sequentially after splicing past and regenerated weeks', () => {
     const today = new Date('2026-01-05T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-03-30' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
     const { plan: originalPlan } = generateTrainingPlan({ raceGoal, availability: fullAvailability(), today })
 
     const twoWeeksLater = new Date('2026-01-19T00:00:00')
@@ -73,7 +73,7 @@ describe('regeneratePlanFromToday', () => {
 
   it('never places a newly-regenerated session before the current week starts', () => {
     const today = new Date('2026-01-05T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-03-30' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
     const { plan: originalPlan } = generateTrainingPlan({ raceGoal, availability: fullAvailability(), today })
 
     const twoWeeksLater = new Date('2026-01-19T00:00:00')

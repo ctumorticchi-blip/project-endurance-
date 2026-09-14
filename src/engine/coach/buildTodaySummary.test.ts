@@ -15,7 +15,7 @@ function availability(): Availability {
 describe('buildTodaySummary', () => {
   it('describes the planned session and counts down to the race', () => {
     const today = new Date('2026-06-02T00:00:00') // Tuesday
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-08-01' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-08-01' })
     const { plan } = generateTrainingPlan({ raceGoal, availability: availability(), today })
 
     const summary = buildTodaySummary({ plan, raceGoal, today: '2026-06-02' })
@@ -28,7 +28,7 @@ describe('buildTodaySummary', () => {
 
   it('explains a rest day instead of leaving it blank', () => {
     const today = new Date('2026-06-02T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-08-01' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-08-01' })
     const { plan } = generateTrainingPlan({ raceGoal, availability: availability(), today })
 
     // Monday has no session in this availability pattern (and falls within the plan's range).
@@ -40,7 +40,7 @@ describe('buildTodaySummary', () => {
 
   it('mentions tomorrow\'s session when there is one', () => {
     const today = new Date('2026-06-02T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-08-01' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-08-01' })
     const { plan } = generateTrainingPlan({ raceGoal, availability: availability(), today })
 
     const summary = buildTodaySummary({ plan, raceGoal, today: '2026-06-06' }) // Saturday
@@ -50,7 +50,7 @@ describe('buildTodaySummary', () => {
 
   it('respects an unavailable-day exception when explaining a forced rest day', () => {
     const today = new Date('2026-06-02T00:00:00')
-    const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-08-01' })
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-08-01' })
     const withException: Availability = {
       ...availability(),
       exceptions: [createAvailabilityException({ date: '2026-06-02', type: 'unavailable' })],

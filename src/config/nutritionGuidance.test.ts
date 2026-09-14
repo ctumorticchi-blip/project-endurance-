@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getFuelingGuidance, getNutritionDisclaimer } from './nutritionGuidance'
+import { getFuelingGuidance, getNutritionDisclaimer, getRaceDayGuidance } from './nutritionGuidance'
 
 describe('getFuelingGuidance', () => {
   it('gives a rest-day message when there is no session', () => {
@@ -45,6 +45,60 @@ describe('getFuelingGuidance', () => {
   it('still gives the swim impracticality note even when a weight is declared', () => {
     const result = getFuelingGuidance({ discipline: 'swim', estimatedDurationMin: 120 }, 70)
     expect(result.during).toMatch(/difficile de s'alimenter/)
+  })
+})
+
+describe('getRaceDayGuidance', () => {
+  it('returns triathlon guidance for a triathlon race goal', () => {
+    const result = getRaceDayGuidance({
+      sport: 'triathlon',
+      distance: 'sprint',
+      id: '1',
+      raceDate: '2026-06-01',
+      createdAt: '2026-01-01',
+    })
+    expect(result.label).toBe('Sprint')
+  })
+
+  it('says a 5k/10k needs no in-race fueling', () => {
+    const fiveK = getRaceDayGuidance({
+      sport: 'running',
+      distance: '5k',
+      id: '1',
+      raceDate: '2026-06-01',
+      createdAt: '2026-01-01',
+    })
+    expect(fiveK.strategy).toMatch(/pas besoin de s'alimenter/)
+
+    const tenK = getRaceDayGuidance({
+      sport: 'running',
+      distance: '10k',
+      id: '2',
+      raceDate: '2026-06-01',
+      createdAt: '2026-01-01',
+    })
+    expect(tenK.strategy).toMatch(/inutile/)
+  })
+
+  it('recommends in-race fueling for the half-marathon and marathon', () => {
+    const half = getRaceDayGuidance({
+      sport: 'running',
+      distance: 'half-marathon',
+      id: '1',
+      raceDate: '2026-06-01',
+      createdAt: '2026-01-01',
+    })
+    expect(half.strategy).toMatch(/30 à 60 g de glucides par heure/)
+
+    const marathon = getRaceDayGuidance({
+      sport: 'running',
+      distance: 'marathon',
+      id: '2',
+      raceDate: '2026-06-01',
+      createdAt: '2026-01-01',
+    })
+    expect(marathon.strategy).toMatch(/charge en glucides/)
+    expect(marathon.strategy).toMatch(/60 à 90 g de glucides par heure/)
   })
 })
 

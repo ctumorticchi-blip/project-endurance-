@@ -8,6 +8,7 @@ const STORAGE_KEY = 'athlete-profile'
 describe('AthleteProfileRepository', () => {
   it('round-trips a current-shape profile, biometrics included', () => {
     const profile = createAthleteProfile({
+      sport: 'triathlon',
       generalSportExperience: 'intermediate',
       triathlonExperience: 'some-races',
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
@@ -26,6 +27,7 @@ describe('AthleteProfileRepository', () => {
     const legacyProfile = {
       id: 'legacy-1',
       createdAt: '2026-01-01T00:00:00.000Z',
+      sport: 'triathlon',
       generalSportExperience: 'beginner',
       triathlonExperience: 'first-triathlon',
       disciplineLevels: { swim: 'beginner', bike: 'beginner', run: 'beginner' },
@@ -43,6 +45,7 @@ describe('AthleteProfileRepository', () => {
     const legacyProfileWithBiometrics = {
       id: 'legacy-2',
       createdAt: '2026-01-01T00:00:00.000Z',
+      sport: 'triathlon',
       generalSportExperience: 'advanced',
       triathlonExperience: 'experienced',
       disciplineLevels: { swim: 'advanced', bike: 'advanced', run: 'advanced' },

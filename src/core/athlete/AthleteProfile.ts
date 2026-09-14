@@ -1,11 +1,20 @@
 import type { Level } from '@/shared/types/common'
 
+export type Sport = 'triathlon' | 'running'
+
 export type TriathlonExperience = 'first-triathlon' | 'some-races' | 'experienced'
 
+/** Same three-tier shape as `TriathlonExperience`, kept as its own type
+ * (rather than reused) because "first-triathlon" doesn't read naturally
+ * for a runner's first time at a given distance. */
+export type RunningExperience = 'first-time-at-distance' | 'some-races' | 'experienced'
+
+/** `swim`/`bike` are only asked for a triathlon goal — `run` is the one
+ * level every athlete declares, triathlete or runner alike. */
 export interface DisciplineLevels {
-  swim: Level
-  bike: Level
   run: Level
+  swim?: Level
+  bike?: Level
 }
 
 /** All optional: FTP/CSS/threshold HR must never be mandatory (brief §20). */
@@ -44,8 +53,12 @@ export interface Biometrics {
 export interface AthleteProfile {
   id: string
   createdAt: string
+  sport: Sport
   generalSportExperience: Level
-  triathlonExperience: TriathlonExperience
+  /** Only set when `sport === 'triathlon'`. */
+  triathlonExperience?: TriathlonExperience
+  /** Only set when `sport === 'running'`. */
+  runningExperience?: RunningExperience
   disciplineLevels: DisciplineLevels
   /** Recent typical training volume, hours/week. Optional — a first-timer may not know this. */
   recentWeeklyVolumeHours?: number

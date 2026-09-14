@@ -1,5 +1,5 @@
 import type { Availability } from '@/core/availability/Availability'
-import type { RaceGoal } from '@/core/goals/RaceGoal'
+import type { TriathlonRaceGoal } from '@/core/goals/RaceGoal'
 import { findWeekForDate, type TrainingPlan, type TrainingWeek } from '@/core/training/TrainingPlan'
 import { toISODate } from '@/shared/utils/date'
 import { generateTrainingPlan } from './generateTrainingPlan'
@@ -19,7 +19,7 @@ export interface RegeneratePlanResult {
  */
 export function regeneratePlanFromToday(input: {
   currentPlan: TrainingPlan
-  raceGoal: RaceGoal
+  raceGoal: TriathlonRaceGoal
   availability: Availability
   today?: Date
 }): RegeneratePlanResult {

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import {
   getFuelingGuidance,
   getNutritionDisclaimer,
+  getRaceDayGuidance,
   NUTRITION_PRINCIPLES,
-  RACE_DAY_GUIDANCE,
 } from '@/config/nutritionGuidance'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
@@ -69,7 +69,7 @@ export function NutritionPage() {
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
   const fueling = getFuelingGuidance(summary.session, weightKg)
-  const raceDay = RACE_DAY_GUIDANCE[raceGoal.distance]
+  const raceDay = getRaceDayGuidance(raceGoal)
   const currentWeek = findWeekForDate(plan, today)
   const shoppingWeek =
     plan.weeks.find((w) => w.startDate === shoppingWeekStart) ?? currentWeek ?? plan.weeks[0]

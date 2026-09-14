@@ -1,4 +1,5 @@
 import { daysUntilRace, type RaceGoal } from '@/core/goals/RaceGoal'
+import { getRaceDistanceLabel } from '@/core/goals/raceGoalDisplay'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import {
   findSessionForDate,
@@ -8,7 +9,6 @@ import {
 } from '@/core/training/TrainingPlan'
 import type { DateISO } from '@/shared/types/common'
 import { addDays } from '@/shared/utils/date'
-import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
 
 export interface TodaySummary {
   daysUntilRace: number
@@ -45,7 +45,7 @@ export function buildTodaySummary(input: {
   const nextSession = findSessionForDate(plan, tomorrow)
 
   const remainingDays = daysUntilRace(raceGoal.raceDate, new Date(today))
-  const distanceLabel = TRIATHLON_DISTANCES[raceGoal.distance].label
+  const distanceLabel = getRaceDistanceLabel(raceGoal)
 
   let explanation: string
   if (!session) {

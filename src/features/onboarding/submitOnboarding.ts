@@ -26,6 +26,7 @@ export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string
   }
 
   const profile = createAthleteProfile({
+    sport: 'triathlon',
     generalSportExperience: draft.generalSportExperience,
     triathlonExperience: draft.triathlonExperience,
     disciplineLevels: {
@@ -41,6 +42,7 @@ export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string
   })
 
   const raceGoal = createRaceGoal({
+    sport: 'triathlon',
     distance: draft.distance,
     raceDate: draft.raceDate,
     raceName: draft.raceName,
