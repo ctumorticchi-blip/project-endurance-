@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/Button'
 import { ONBOARDING_STEPS, createInitialDraft, type OnboardingDraft } from './onboardingState'
 import { isStepValid } from './stepValidation'
 import { submitOnboarding } from './submitOnboarding'
+import { TriathlonBadgeIllustration } from './TriathlonBadgeIllustration'
 import { RaceGoalStep } from './steps/RaceGoalStep'
 import { ExperienceStep } from './steps/ExperienceStep'
 import { EquipmentStep } from './steps/EquipmentStep'
@@ -51,6 +52,8 @@ export function OnboardingPage() {
   if (showWelcome) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10 text-center">
+        <TriathlonBadgeIllustration />
+
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold tracking-wide text-primary uppercase">{brand.name}</p>
           <h1 className="text-2xl font-bold">Construisons ton programme</h1>

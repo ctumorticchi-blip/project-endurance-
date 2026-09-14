@@ -28,8 +28,8 @@ export function WeekSummaryCard({ summary }: WeekSummaryCardProps) {
       : `${completedCount}/${plannedCount} séance${plannedCount === 1 ? '' : 's'} réalisée${completedCount === 1 ? '' : 's'}, pour ${formatHoursAndMinutes(actualMinutes)} sur ${formatHoursAndMinutes(plannedMinutes)} prévues.`
 
   return (
-    <Card variant="raised" className="flex flex-col gap-1">
-      <h2 className="text-sm font-semibold">Résumé de la semaine dernière</h2>
+    <Card variant="raised" className="glow-card flex flex-col gap-1">
+      <h2 className="text-sm font-semibold">📊 Résumé de la semaine dernière</h2>
       <p className="text-xs text-text-muted">Du {formatWeekRange(summary.weekStart)}</p>
       <p className="mt-1 text-sm">{adherenceSentence}</p>
     </Card>

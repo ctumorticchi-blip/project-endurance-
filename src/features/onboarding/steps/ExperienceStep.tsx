@@ -49,7 +49,7 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
       />
 
       <ChoiceGroup
-        legend="Niveau natation"
+        legend="🏊 Niveau natation"
         name="swimLevel"
         choices={LEVEL_CHOICES}
         value={draft.swimLevel}
@@ -57,7 +57,7 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
       />
 
       <ChoiceGroup
-        legend="Niveau vélo"
+        legend="🚴 Niveau vélo"
         name="bikeLevel"
         choices={LEVEL_CHOICES}
         value={draft.bikeLevel}
@@ -65,7 +65,7 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
       />
 
       <ChoiceGroup
-        legend="Niveau course à pied"
+        legend="🏃 Niveau course à pied"
         name="runLevel"
         choices={LEVEL_CHOICES}
         value={draft.runLevel}

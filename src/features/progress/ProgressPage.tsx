@@ -69,7 +69,7 @@ export function ProgressPage() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold">Ce que j'ai appris</h2>
+        <h2 className="mb-1 text-sm font-semibold">💡 Ce que j'ai appris</h2>
         <Card variant="muted" className="text-sm text-text-muted">
           {summary.learnedInsight}
         </Card>

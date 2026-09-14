@@ -161,7 +161,10 @@ export function TodayPage() {
         />
       ) : summary.session && feedbackForToday ? (
         <>
-          <Card variant="raised" className="flex flex-col items-center gap-1 py-8 text-center">
+          <Card variant="raised" className="glow-card flex flex-col items-center gap-1 py-8 text-center">
+            <p aria-hidden="true" className="text-4xl">
+              🎉
+            </p>
             <h2 className="text-lg font-semibold">Bravo, séance terminée !</h2>
             <p className="text-sm text-text-muted">{summary.session.title}</p>
           </Card>
@@ -261,7 +264,7 @@ export function TodayPage() {
         </>
       ) : (
         <>
-          <h2 className="text-lg font-semibold">Jour de repos</h2>
+          <h2 className="text-lg font-semibold">😌 Jour de repos</h2>
           <CoachInsight message={summary.explanation} />
         </>
       )}

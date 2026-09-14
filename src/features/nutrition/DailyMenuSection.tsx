@@ -8,10 +8,10 @@ import { Card } from '@/shared/components/Card'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 
 const SLOT_LABELS: Record<MealSlot, string> = {
-  breakfast: 'Petit-déjeuner',
-  lunch: 'Déjeuner',
-  dinner: 'Dîner',
-  snack: 'Collation',
+  breakfast: '🍳 Petit-déjeuner',
+  lunch: '🥗 Déjeuner',
+  dinner: '🍝 Dîner',
+  snack: '🍎 Collation',
 }
 
 interface MealCardProps {

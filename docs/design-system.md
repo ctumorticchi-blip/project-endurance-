@@ -1,8 +1,13 @@
-# Design System (M1.0)
+# Design System (M1.0, rebrand "explosif" en M1.9)
 
-Direction: premium, sportif, calme, précis (brief §39). Lisibilité avant
-tout — pas de dashboard financier, pas de look gaming, pas d'avalanche de
-graphiques.
+Direction d'origine (M1.0) : premium, sportif, calme, précis (brief §39).
+Retour utilisateur en M1.9 : ce calme lisait comme corporate/froid plutôt
+que motivant — direction révisée, **explosif et moderne**, tout en gardant
+non négociable ce que "calme, précis" protégeait vraiment : lisibilité
+avant tout, pas de dashboard financier, pas d'avalanche de graphiques, et
+surtout **zéro régression de contraste WCAG**. L'énergie vient de la
+palette (couleurs vives), de touches ponctuelles (halos, emoji, une
+illustration), pas d'un abandon de la rigueur d'accessibilité.
 
 ## Tokens
 
@@ -13,16 +18,16 @@ Deux emplacements, gardés synchronisés à la main :
 - `src/index.css` (`@theme`) — les mêmes valeurs en variables CSS/utilitaires
   Tailwind, puisque Tailwind ne peut pas importer un module TS au build.
 
-Palette (revue après M1, retour "style sportif" inspiration Garmin) : fond
-bleu-marine très sombre (`#0D1B2A`), surfaces légèrement plus claires par
-paliers de la même teinte (`surface` → `surface-muted` → `surface-raised`),
-un bleu primaire (`#4EA1FF`, la couleur de marque/action — anciennement
-l'accent) et un vert accent (`#3DDC97`, anciennement primaire — les deux
-tons ont simplement échangé de rôle, leurs valeurs de contraste déjà
-vérifiées restent valables), plus warning/danger (`danger` reteinté plus
-clair, `#F2665C` → `#F5776D`, pour retenir 4.5:1 sur la nouvelle palette).
-Texte en trois intensités (`text` / `text-muted` / `text-faint`) — jamais
-d'information critique portée uniquement par la couleur.
+Palette (M1.9, rebrand "explosif") : fond aubergine très sombre
+(`#160F23` — anciennement le bleu-marine `#0D1B2A` de la palette Garmin),
+surfaces légèrement plus claires par paliers de la même teinte (`surface`
+→ `surface-muted` → `surface-raised`), un **orange corail vif** en
+primaire (`#FF6B4A`, la couleur de marque/action — anciennement un bleu
+`#4EA1FF`) et un **turquoise vif** en accent (`#2FE6B0` — anciennement un
+vert `#3DDC97`). `warning`/`danger` ont aussi été retintés pour rester
+lisibles sur le nouveau fond (`#FFC24B` / `#FF6767`). Texte en trois
+intensités (`text` / `text-muted` / `text-faint`) — jamais d'information
+critique portée uniquement par la couleur.
 
 **Toute la palette est revérifiée à chaque changement, pas seulement les
 valeurs qu'on modifie explicitement** : changer le fond change le
@@ -30,9 +35,12 @@ contraste de tout ce qui est dessiné dessus. Avant de fixer les valeurs
 ci-dessus, un script a recalculé le ratio WCAG de chaque paire texte/fond
 (`text`/`text-muted`/`text-faint`/`primary`/`accent`/`warning`/`danger` ×
 les quatre fonds) et de chaque bouton (couleur du label sur le fond du
-bouton) — c'est ce qui a fait remonter `danger` de `#F2665C` à `#F5776D`
-(l'ancienne valeur ne tenait plus 4.5:1 sur les nouvelles surfaces plus
-claires) et fait passer l'alpha des `Badge` de 8 % à 6 %.
+bouton). Résultats pour la palette M1.9 (pire cas par ligne) :
+`text` ≥ 13.7:1, `text-muted` ≥ 6.6:1, `text-faint` ≥ 5.1:1, `primary` ≥
+5.2:1, `accent` ≥ 9.0:1, `warning` ≥ 9.0:1, `danger` ≥ 5.1:1 — marge
+confortable partout au-dessus du seuil de 4.5:1. `text-faint` a dû être
+éclairci une nouvelle fois pendant cette passe (`#9686AC` → `#A093B8`,
+seule valeur qui échouait au premier essai, à 4.35:1 sur `surface-raised`).
 
 **Règle de contraste (Badge)** : chaque `Badge` teinté (`primary`/`accent`/
 `warning`/`danger`) mélange sa couleur à 6 % au-dessus de son fond. Un
@@ -40,11 +48,14 @@ claires) et fait passer l'alpha des `Badge` de 8 % à 6 %.
 c'est `background`, `surface`, `surface-muted` ou `surface-raised` — les
 quatre doivent tenir 4.5:1. Ce pourcentage n'est pas une constante figée :
 il a déjà dû être recalculé deux fois (15 % → 8 % en M1 quand `danger`
-échouait sur `surface-raised`, 8 % → 6 % avec la nouvelle palette Garmin)
-et devra l'être à nouveau si une des quatre couleurs de fond ou une des
-quatre tonalités change. Ne jamais recalibrer une seule tonalité
-isolément : vérifier les quatre fonds pour les quatre tonalités avant de
-changer l'alpha.
+échouait sur `surface-raised`, 8 % → 6 % avec la palette Garmin) — la
+passe M1.9 a revérifié les quatre tonalités × quatre fonds à 6 % sur la
+nouvelle palette et ça tient toujours (pire cas 4.70:1, `danger` sur
+`surface-raised`), donc l'alpha n'a pas bougé cette fois. Il devra être
+recalculé à nouveau si une des quatre couleurs de fond ou une des quatre
+tonalités change. Ne jamais recalibrer une seule tonalité isolément :
+vérifier les quatre fonds pour les quatre tonalités avant de changer
+l'alpha.
 
 Ne jamais imbriquer un `Badge` teinté à l'intérieur d'un autre conteneur
 déjà teinté de la même couleur (ex. une bannière `bg-accent/10`) : les deux
@@ -54,11 +65,22 @@ réglage 15 % — trouvé et corrigé via un scan axe-core réel, pas en lecture
 de code). Dans ce contexte, utiliser `tone="neutral"` pour le badge
 imbriqué.
 
-`text-faint` a été recalculé une première fois (`#5C6774` → `#868E98`)
-après un scan axe-core sur le Session Player pendant M1, puis une seconde
-fois (`#868E98` → `#9098A0`) pour la palette Garmin — même raison à chaque
-fois : un token de texte doit rester lisible sur les quatre fonds de
-l'app, pas seulement dans le contexte où il a été choisi au départ.
+`text-faint` a maintenant été recalculé trois fois — `#5C6774` → `#868E98`
+après un scan axe-core sur le Session Player pendant M1, `#868E98` →
+`#9098A0` pour la palette Garmin, `#9686AC` → `#A093B8` pour la palette
+M1.9 — même raison à chaque fois : un token de texte doit rester lisible
+sur les quatre fonds de l'app, pas seulement dans le contexte où il a été
+choisi au départ.
+
+**Halos décoratifs (`.glow-card`, `src/index.css`)** : quelques cartes
+"hero" (compte à rebours course, célébration post-séance, résumé
+hebdomadaire) reçoivent un halo radial `primary`/`accent` à faible opacité
+en arrière-plan, pour l'énergie visuelle demandée sans jamais placer de
+texte directement sur une couleur saturée (ce qui casserait le contraste).
+Plafonné à 16 % (`primary`) / 13 % (`accent`) — vérifié que `text` et
+`text-muted` tiennent 4.5:1 même mélangés jusqu'à 20 %/15 % respectivement
+sur `surface-raised`, donc marge de sécurité au réglage retenu. Ne jamais
+monter ces pourcentages sans revérifier ce plafond.
 
 Typographie : une pile de polices système déclarée volontairement
 (`Inter, ui-sans-serif, system-ui, ...`) — pas de webfont chargée à
@@ -102,6 +124,22 @@ aux grands conteneurs). Un seul jeu de valeurs utilisé partout — plus de
   liste (historique dans Progrès).
 - `inputStyles.ts` (`INPUT_CLASSES`) — la classe partagée par tous les
   champs texte/nombre/date/textarea de l'app.
+- `TriathlonBadgeIllustration` (`features/onboarding`) — l'unique
+  illustration de l'app (écran d'accueil de l'onboarding), un SVG inline
+  dessiné à la main plutôt qu'une image récupérée à distance : l'app est
+  hors-ligne d'abord (`docs/architecture.md`), donc un visuel héro ne peut
+  pas dépendre d'un hébergeur d'images tiers, et licencier une photo pour
+  un seul écran ne se justifiait pas.
+
+**Convention emoji** : quelques emoji ponctuels (disciplines, créneaux de
+repas, moments de célébration) portent une partie du ton "explosif" sans
+dépendre d'assets. Toujours ajoutés en dehors du texte exact vérifié par
+un test (`getByText`/`getByRole` avec correspondance stricte côté Vitest +
+Testing Library — contrairement à Playwright, la correspondance n'y est
+**pas** un sous-texte par défaut) : soit dans une constante d'affichage
+comme `DISCIPLINE_LABELS` (jamais utilisée comme clé ailleurs que pour
+l'affichage), soit dans un élément `aria-hidden` séparé plutôt que
+concaténé au texte d'un titre déjà couvert par un test.
 
 ## Ce qui n'a pas changé
 

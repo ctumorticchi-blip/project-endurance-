@@ -10,10 +10,10 @@ import { Card } from '@/shared/components/Card'
 import type { DateISO } from '@/shared/types/common'
 
 const SLOT_LABELS: Record<MealSlot, string> = {
-  breakfast: 'petit-déjeuner',
-  lunch: 'déjeuner',
-  dinner: 'dîner',
-  snack: 'collation',
+  breakfast: '🍳 petit-déjeuner',
+  lunch: '🥗 déjeuner',
+  dinner: '🍝 dîner',
+  snack: '🍎 collation',
 }
 
 interface CurrentMealCardProps {

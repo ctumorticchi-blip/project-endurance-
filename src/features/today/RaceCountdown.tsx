@@ -14,15 +14,15 @@ interface RaceCountdownProps {
 export function RaceCountdown({ raceLabel, daysUntilRace }: RaceCountdownProps) {
   const isRaceWeek = daysUntilRace <= RACE_WEEK_THRESHOLD_DAYS
   return (
-    <Card variant="raised" className="flex items-center justify-between">
+    <Card variant="raised" className="glow-card flex items-center justify-between">
       <div>
         <p className="text-xs font-medium tracking-wide text-text-muted uppercase">
-          Triathlon {raceLabel}
+          🎯 Triathlon {raceLabel}
         </p>
         <p className="text-3xl font-bold tabular-nums">J-{daysUntilRace}</p>
       </div>
       <Badge tone={isRaceWeek ? 'warning' : 'accent'}>
-        {isRaceWeek ? 'Semaine de course' : 'Avant la course'}
+        {isRaceWeek ? '🔥 Semaine de course' : 'Avant la course'}
       </Badge>
     </Card>
   )

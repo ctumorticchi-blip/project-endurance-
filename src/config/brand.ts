@@ -15,23 +15,29 @@ export const brand = {
     'Un coach numérique personnel pour sportifs d’endurance : programme adaptatif, explicable, et centré sur ta vraie vie.',
   domainVersion: 1,
   colors: {
-    // Sporty / precise, Garmin-inspired: navy-blue ground, blue as the
-    // primary brand/action color instead of green. See
-    // docs/design-system.md for the contrast math behind every value here.
-    background: '#0D1B2A',
-    surface: '#142437',
-    surfaceMuted: '#1C2E44',
-    surfaceRaised: '#1D2F46',
-    primary: '#4EA1FF',
-    primaryMuted: '#1E5A96',
-    accent: '#3DDC97',
-    text: '#F2F6F9',
-    textMuted: '#9AA7B4',
-    textFaint: '#9098A0',
-    border: '#2B3F56',
-    borderStrong: '#3D5A78',
-    warning: '#F2B84B',
-    danger: '#F5776D',
+    // "Explosif et moderne" rebrand (M1.9, athlete feedback: the Garmin
+    // navy/blue read as calm/corporate, not energetic). Deep aubergine
+    // ground instead of navy, a vivid coral-orange as the primary
+    // brand/action color instead of blue, and a bright teal accent instead
+    // of green — same three-surface-tier structure, same text/border
+    // roles, only the hues moved. See docs/design-system.md for the full
+    // WCAG contrast recalculation behind every value here (nothing was
+    // carried over unverified just because a similarly-named token existed
+    // before).
+    background: '#160F23',
+    surface: '#211935',
+    surfaceMuted: '#2A2140',
+    surfaceRaised: '#2D2444',
+    primary: '#FF6B4A',
+    primaryMuted: '#B34426',
+    accent: '#2FE6B0',
+    text: '#FBF7FF',
+    textMuted: '#B6A9C9',
+    textFaint: '#A093B8',
+    border: '#3A2E52',
+    borderStrong: '#4E3F6D',
+    warning: '#FFC24B',
+    danger: '#FF6767',
   },
   /**
    * A deliberate, network-independent type stack: a humanist sans for
@@ -60,7 +66,7 @@ export const brand = {
   },
   metadata: {
     titleSuffix: ' · Project Endurance',
-    themeColor: '#0D1B2A',
+    themeColor: '#160F23',
   },
 } as const
 
