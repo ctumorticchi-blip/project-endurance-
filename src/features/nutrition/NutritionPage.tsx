@@ -18,17 +18,19 @@ import type { MealSlot } from '@/config/nutrition/mealCatalog'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import type { DateISO } from '@/shared/types/common'
-import { toISODate } from '@/shared/utils/date'
+import { formatWeekRange, toISODate } from '@/shared/utils/date'
 import { DailyMenuSection } from './DailyMenuSection'
 import { NutritionPreferencesForm } from './NutritionPreferencesForm'
+import { ShoppingListSection } from './ShoppingListSection'
 import { WeeklyMenuSection } from './WeeklyMenuSection'
 
-type MenuView = 'day' | 'week'
+type MenuView = 'day' | 'week' | 'shopping'
 
 function ViewToggle({ view, onChange }: { view: MenuView; onChange: (view: MenuView) => void }) {
   const OPTIONS: { value: MenuView; label: string }[] = [
     { value: 'day', label: 'Jour' },
     { value: 'week', label: 'Semaine' },
+    { value: 'shopping', label: '🛒 Courses' },
   ]
   return (
     <div role="group" aria-label="Vue du menu" className="inline-flex gap-1 rounded-[var(--radius-sm)] border border-border p-0.5">
@@ -57,6 +59,7 @@ export function NutritionPage() {
   const [editingPreferences, setEditingPreferences] = useState(false)
   const [view, setView] = useState<MenuView>('day')
   const [overrides, setOverrides] = useState(() => MealOverrideRepository.loadAll())
+  const [shoppingWeekStart, setShoppingWeekStart] = useState<DateISO>()
 
   if (!plan || !raceGoal) {
     return <PlaceholderPage title="Nutrition" description="Ton programme n'a pas encore été généré." />
@@ -68,6 +71,18 @@ export function NutritionPage() {
   const fueling = getFuelingGuidance(summary.session, weightKg)
   const raceDay = RACE_DAY_GUIDANCE[raceGoal.distance]
   const currentWeek = findWeekForDate(plan, today)
+  const shoppingWeek =
+    plan.weeks.find((w) => w.startDate === shoppingWeekStart) ?? currentWeek ?? plan.weeks[0]
+  const shoppingWeekIndex = shoppingWeek ? plan.weeks.findIndex((w) => w.id === shoppingWeek.id) : -1
+
+  const handlePrevWeek = () => {
+    const prev = plan.weeks[shoppingWeekIndex - 1]
+    if (prev) setShoppingWeekStart(prev.startDate)
+  }
+  const handleNextWeek = () => {
+    const next = plan.weeks[shoppingWeekIndex + 1]
+    if (next) setShoppingWeekStart(next.startDate)
+  }
 
   const dailyMenu =
     preferences &&
@@ -93,7 +108,7 @@ export function NutritionPage() {
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold">
-            {view === 'day' ? 'Ton menu du jour' : 'Ton menu de la semaine'}
+            {view === 'day' ? 'Ton menu du jour' : view === 'week' ? 'Ton menu de la semaine' : 'Ta liste de courses'}
           </h2>
           <div className="flex items-center gap-3">
             {preferences && <ViewToggle view={view} onChange={setView} />}
@@ -123,17 +138,44 @@ export function NutritionPage() {
           dailyMenu && (
             <DailyMenuSection date={today} entries={dailyMenu.entries} preferences={preferences} onOverride={handleOverride} />
           )
-        ) : currentWeek ? (
-          <WeeklyMenuSection
-            plan={plan}
-            weekStart={currentWeek.startDate}
-            today={today}
-            preferences={preferences}
-            overrides={overrides}
-            onOverride={handleOverride}
-          />
+        ) : view === 'week' ? (
+          currentWeek ? (
+            <WeeklyMenuSection
+              plan={plan}
+              weekStart={currentWeek.startDate}
+              today={today}
+              preferences={preferences}
+              overrides={overrides}
+              onOverride={handleOverride}
+            />
+          ) : (
+            <p className="text-xs text-text-muted">Ton programme ne couvre pas encore cette semaine.</p>
+          )
+        ) : shoppingWeek ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={handlePrevWeek}
+                disabled={shoppingWeekIndex <= 0}
+                className="text-xs font-medium text-accent underline disabled:text-text-faint disabled:no-underline"
+              >
+                ← Précédente
+              </button>
+              <p className="text-xs font-medium text-text-muted">Du {formatWeekRange(shoppingWeek.startDate)}</p>
+              <button
+                type="button"
+                onClick={handleNextWeek}
+                disabled={shoppingWeekIndex >= plan.weeks.length - 1}
+                className="text-xs font-medium text-accent underline disabled:text-text-faint disabled:no-underline"
+              >
+                Suivante →
+              </button>
+            </div>
+            <ShoppingListSection plan={plan} weekStart={shoppingWeek.startDate} preferences={preferences} overrides={overrides} />
+          </div>
         ) : (
-          <p className="text-xs text-text-muted">Ton programme ne couvre pas encore cette semaine.</p>
+          <p className="text-xs text-text-muted">Ton programme ne couvre pas encore de semaine.</p>
         )}
       </section>
 

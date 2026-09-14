@@ -1,17 +1,10 @@
 import type { WeekSummary } from '@/engine/history/buildLastWeekSummary'
 import { Card } from '@/shared/components/Card'
+import { formatWeekRange } from '@/shared/utils/date'
 import { formatHoursAndMinutes } from '@/shared/utils/duration'
 
 interface WeekSummaryCardProps {
   summary: WeekSummary
-}
-
-function formatWeekRange(weekStart: string): string {
-  const start = new Date(weekStart)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-  return `${fmt(start)} au ${fmt(end)}`
 }
 
 /**

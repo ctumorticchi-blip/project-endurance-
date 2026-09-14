@@ -37,3 +37,13 @@ export function mondayOf(date: Date): Date {
   d.setHours(0, 0, 0, 0)
   return d
 }
+
+/** "8 juin au 14 juin" — a Monday-to-Sunday week range in short French
+ * date format, shared by anything that displays one calendar week. */
+export function formatWeekRange(weekStart: DateISO): string {
+  const start = new Date(weekStart)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  return `${fmt(start)} au ${fmt(end)}`
+}

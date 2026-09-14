@@ -70,11 +70,43 @@ programme complet de plusieurs mois, la quasi-totalité des repas
 compatibles avec un régime donné finit par apparaître (vérifié : ~15
 petits-déjeuners/déjeuners/dîners distincts sur une fenêtre de 90 jours).
 
+## Liste de courses (`engine/nutrition/buildShoppingList.ts`)
+
+Optionnelle — un troisième onglet (« 🛒 Courses ») à côté de Jour/Semaine
+dans Nutrition, jamais imposée. Construite à partir du **même** menu de
+semaine que l'onglet « Semaine » (`buildWeeklyMenu` + `applyMealOverrides`) :
+si l'athlète change un repas au dernier moment, la liste change avec, sans
+état séparé à resynchroniser. Navigable semaine par semaine sur toute la
+durée du programme (`plan.weeks`), pas seulement la semaine en cours.
+
+Trois étapes, chacune dans son propre module :
+
+1. **`parsePortion.ts`** — extrait un couple {quantité, unité} d'une
+   portion du catalogue ("150 g" → `{amount:150, unit:'g'}`) quand c'est
+   possible. Une portion qualitative ("une pincée", "au goût") renvoie
+   `undefined` plutôt que d'inventer un nombre — même règle "pas de fausse
+   précision" que partout ailleurs dans l'app. Complétude vérifiée par
+   test : chaque portion réellement utilisée dans `mealCatalog.ts` est soit
+   parsée, soit explicitement reconnue comme qualitative.
+2. **`config/nutrition/foodCategories.ts`** — classe chaque aliment du
+   catalogue par rayon (Fruits & légumes / Protéines / Produits laitiers &
+   alternatives / Féculents & céréales / Épicerie, condiments & snacks),
+   comme le ferait un∙e diététicien∙ne ou le plan du magasin lui-même.
+   Correspondance exacte par nom d'aliment (jamais de fusion approximative
+   entre "Œuf" et "Œuf dur" : les considérer identiques serait une
+   supposition, pas une donnée). Complétude vérifiée par test : tout
+   aliment ajouté au catalogue sans catégorie fait échouer la suite plutôt
+   que de retomber silencieusement dans "Épicerie".
+3. **`buildShoppingList.ts`** — additionne les quantités d'un même aliment
+   à travers tous les repas de la semaine (même unité seulement — pas de
+   conversion g ↔ cuillère à soupe), et conserve les portions qualitatives
+   telles quelles (accolées avec « + » si l'aliment apparaît aussi avec une
+   quantité chiffrée, ex. "1 cuillère à soupe + au goût").
+
 ## Ce qui n'est délibérément pas fait
 
-- Pas de montant en euros précis par repas ni de liste de courses
-  chiffrée — le budget ne sert qu'à orienter le coût relatif des
-  propositions.
+- Pas de montant en euros précis par repas ni par liste de courses — le
+  budget ne sert qu'à orienter le coût relatif des propositions.
 - Pas de calcul calorique ni de macros chiffrées par repas — les portions
   sont données en grammes/unités concrets, pas en objectif calorique
   individualisé, ce qui exigerait des données (dépense énergétique,

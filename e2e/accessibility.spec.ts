@@ -511,6 +511,48 @@ test.describe('nutrition', () => {
     const afterReload = await mealTitle.textContent()
     expect(afterReload).toBe(after)
   })
+
+  test('shopping list: categorized, navigable week to week, and reflects a meal swap', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Ton menu du jour')
+
+    await page.getByRole('button', { name: '🛒 Courses' }).click()
+    await page.waitForSelector('text=Ta liste de courses')
+    await expect(page.getByRole('heading', { name: 'Protéines' })).toBeVisible()
+    await scanAxe(page)
+
+    const week1 = await page.locator('body').innerText()
+    await page.getByRole('button', { name: 'Suivante →' }).click()
+    await page.waitForTimeout(150)
+    const week2 = await page.locator('body').innerText()
+    expect(week2).not.toBe(week1)
+    await scanAxe(page)
+
+    await page.getByRole('button', { name: '← Précédente' }).click()
+    await page.waitForTimeout(150)
+    expect(await page.locator('body').innerText()).toBe(week1)
+
+    // Swap a meal in the week view, then confirm the shopping list changed.
+    await page.getByRole('button', { name: 'Semaine', exact: true }).click()
+    await page.waitForSelector('text=Ton menu de la semaine')
+    await page.getByRole('button', { name: 'Changer' }).first().click()
+    await page.waitForSelector('text=Autres propositions')
+    for (const radio of await page.getByRole('radio').all()) {
+      if (!(await radio.isChecked())) {
+        await radio.click()
+        break
+      }
+    }
+    await page.getByRole('button', { name: 'Confirmer' }).click()
+    await page.waitForTimeout(150)
+
+    await page.getByRole('button', { name: '🛒 Courses' }).click()
+    await page.waitForSelector('text=Ta liste de courses')
+    expect(await page.locator('body').innerText()).not.toBe(week1)
+  })
 })
 
 test.describe('profile', () => {
