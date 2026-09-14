@@ -50,9 +50,15 @@ export function ReviewStep({ draft }: ReviewStepProps) {
             {formatHoursAndMinutes(totalMinutes)}/semaine
           </dd>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between border-b border-border pb-2">
           <dt className="text-text-muted">Jours</dt>
           <dd>{availableDays.map((d) => WEEKDAY_LABELS[d]).join(', ') || '—'}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-text-muted">Jours de repos souhaités</dt>
+          <dd>
+            {draft.desiredRestDaysPerWeek}/semaine
+          </dd>
         </div>
       </dl>
     </div>

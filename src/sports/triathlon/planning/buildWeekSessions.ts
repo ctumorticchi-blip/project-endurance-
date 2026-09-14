@@ -1,4 +1,9 @@
-import { getAvailableMinutes, hasPoolAccess, type Availability } from '@/core/availability/Availability'
+import {
+  getAvailableMinutes,
+  hasPoolAccess,
+  resolveDesiredRestDays,
+  type Availability,
+} from '@/core/availability/Availability'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import type { TrainingPhaseName } from '@/core/training/TrainingPlan'
 import type { DateISO, Discipline } from '@/shared/types/common'
@@ -34,6 +39,13 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     (date) => date < planEndDateExclusive,
   )
 
+  // At least one rest day per week, always — even if every day is marked
+  // available with enough minutes. Days are already sorted by most
+  // available minutes first, so capping the count here simply drops the
+  // day(s) with the least time, leaving them unscheduled (a rest day).
+  const restDaysPerWeek = resolveDesiredRestDays(availability)
+  const maxTrainingDays = Math.max(0, weekDates.length - restDaysPerWeek)
+
   const daysWithMinutes = weekDates
     .map((date) => ({
       date,
@@ -42,6 +54,7 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     }))
     .filter((d) => d.minutes >= MIN_VIABLE_SESSION_MINUTES)
     .sort((a, b) => b.minutes - a.minutes)
+    .slice(0, maxTrainingDays)
 
   const numDays = daysWithMinutes.length
   let disciplines: Discipline[] = WEEKLY_SLOT_DISCIPLINES[Math.min(numDays, 7)] ?? []

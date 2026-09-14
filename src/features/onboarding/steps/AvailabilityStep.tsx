@@ -1,4 +1,5 @@
 import { Card } from '@/shared/components/Card'
+import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { WEEKDAYS, type Weekday } from '@/shared/types/common'
 import type { OnboardingDraft } from '../onboardingState'
@@ -37,6 +38,20 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
           des exceptions ponctuelles plus tard.
         </p>
       </div>
+
+      <Field
+        label="Jours de repos souhaités par semaine"
+        hint="Le repos fait partie de l'entraînement. Un jour de repos est toujours conservé dans ton programme, même si tu indiques 0 ou que tous tes jours sont disponibles."
+      >
+        <input
+          type="number"
+          min={0}
+          max={6}
+          value={draft.desiredRestDaysPerWeek}
+          onChange={(e) => onChange({ desiredRestDaysPerWeek: Number(e.target.value) || 0 })}
+          className={`w-20 ${INPUT_CLASSES}`}
+        />
+      </Field>
 
       <ul className="flex flex-col gap-3">
         {WEEKDAYS.map((day) => {

@@ -4,6 +4,7 @@ import {
   createEmptyWeeklyPattern,
   getAvailableMinutes,
   hasPoolAccess,
+  resolveDesiredRestDays,
   type Availability,
 } from './Availability'
 
@@ -64,5 +65,19 @@ describe('hasPoolAccess', () => {
       createAvailabilityException({ date: '2026-06-02', type: 'unavailable' }),
     )
     expect(hasPoolAccess(availability, '2026-06-02')).toBe(false)
+  })
+})
+
+describe('resolveDesiredRestDays', () => {
+  it('defaults to the minimum when unset (older saved records, or unanswered)', () => {
+    expect(resolveDesiredRestDays(buildAvailability())).toBe(1)
+  })
+
+  it('respects a higher request', () => {
+    expect(resolveDesiredRestDays({ ...buildAvailability(), desiredRestDaysPerWeek: 3 })).toBe(3)
+  })
+
+  it('never goes below the minimum even if the athlete asks for zero', () => {
+    expect(resolveDesiredRestDays({ ...buildAvailability(), desiredRestDaysPerWeek: 0 })).toBe(1)
   })
 })

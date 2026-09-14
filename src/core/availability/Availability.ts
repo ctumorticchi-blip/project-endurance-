@@ -21,9 +21,25 @@ export interface AvailabilityException {
   reason?: string
 }
 
+/** Below this, the plan generator always reserves at least one rest day
+ * per week regardless of what the athlete requests or how many days are
+ * marked available (brief feedback: rest is not optional, even for an
+ * athlete who marks every day of the week as free). */
+export const MIN_REST_DAYS_PER_WEEK = 1
+
 export interface Availability {
   weeklyPattern: WeeklyPattern
   exceptions: AvailabilityException[]
+  /** How many rest days per week the athlete asked for. Optional — absent
+   * for availability records saved before this preference existed, and
+   * treated the same as not having answered. The generator never
+   * schedules more than 7 - max(this, MIN_REST_DAYS_PER_WEEK) training
+   * days in a week, even if more days have available minutes. */
+  desiredRestDaysPerWeek?: number
+}
+
+export function resolveDesiredRestDays(availability: Availability): number {
+  return Math.max(MIN_REST_DAYS_PER_WEEK, availability.desiredRestDaysPerWeek ?? MIN_REST_DAYS_PER_WEEK)
 }
 
 export function createEmptyWeeklyPattern(): WeeklyPattern {

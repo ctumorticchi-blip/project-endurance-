@@ -1,6 +1,6 @@
 import type { Equipment, KnownMetrics } from '@/core/athlete/AthleteProfile'
 import type { AvailabilityException, WeeklyPattern } from '@/core/availability/Availability'
-import { createEmptyWeeklyPattern } from '@/core/availability/Availability'
+import { createEmptyWeeklyPattern, MIN_REST_DAYS_PER_WEEK } from '@/core/availability/Availability'
 import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
 import type { TriathlonDistance } from '@/sports/triathlon/domain/distance'
 import type { DateISO, Level } from '@/shared/types/common'
@@ -27,6 +27,7 @@ export interface OnboardingDraft {
 
   weeklyPattern: WeeklyPattern
   exceptions: AvailabilityException[]
+  desiredRestDaysPerWeek: number
 
   constraintsNote?: string
 }
@@ -48,6 +49,7 @@ export function createInitialDraft(): OnboardingDraft {
     knownMetrics: {},
     weeklyPattern: createEmptyWeeklyPattern(),
     exceptions: [],
+    desiredRestDaysPerWeek: MIN_REST_DAYS_PER_WEEK,
   }
 }
 

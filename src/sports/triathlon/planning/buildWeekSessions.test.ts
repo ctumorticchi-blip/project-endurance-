@@ -45,4 +45,37 @@ describe('buildWeekSessions', () => {
     const longBike = sessions.find((s) => s.discipline === 'bike' && s.sessionType === 'long')
     expect(longBike?.priority).toBe('key')
   })
+
+  describe('rest days', () => {
+    function build(availability: Availability) {
+      return buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'base',
+        weekIndexInPhase: 0,
+        weekId: 'week-1',
+        availability,
+      })
+    }
+
+    it('never schedules all 7 days even when every day is marked available', () => {
+      const sessions = build(availabilityAllDays(90))
+      const scheduledDates = new Set(sessions.map((s) => s.date))
+      expect(scheduledDates.size).toBeLessThanOrEqual(6)
+    })
+
+    it('still reserves at least one rest day when the athlete asks for zero', () => {
+      const availability = { ...availabilityAllDays(90), desiredRestDaysPerWeek: 0 }
+      const sessions = build(availability)
+      const scheduledDates = new Set(sessions.map((s) => s.date))
+      expect(scheduledDates.size).toBeLessThanOrEqual(6)
+    })
+
+    it('reserves more rest days when the athlete asks for more', () => {
+      const availability = { ...availabilityAllDays(90), desiredRestDaysPerWeek: 3 }
+      const sessions = build(availability)
+      const scheduledDates = new Set(sessions.map((s) => s.date))
+      expect(scheduledDates.size).toBeLessThanOrEqual(4)
+    })
+  })
 })
