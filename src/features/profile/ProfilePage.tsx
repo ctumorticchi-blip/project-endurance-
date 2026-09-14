@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { ReadinessCheckRepository } from '@/core/history/ReadinessCheckRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
@@ -16,6 +17,7 @@ import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { formatPaceMinSec } from '@/shared/utils/pace'
+import { SecondaryRaceGoalsSection } from './SecondaryRaceGoalsSection'
 
 const LEVEL_LABELS: Record<string, string> = {
   beginner: 'Débutant',
@@ -76,6 +78,7 @@ export function ProfilePage() {
   const handleResetConfirmed = () => {
     AthleteProfileRepository.clear()
     RaceGoalRepository.clear()
+    SecondaryRaceGoalRepository.clear()
     AvailabilityRepository.clear()
     TrainingPlanRepository.clear()
     CompletedSessionRepository.clear()
@@ -114,6 +117,8 @@ export function ProfilePage() {
           Modifier mes disponibilités
         </Link>
       </div>
+
+      <SecondaryRaceGoalsSection />
 
       {powerToWeight && (
         <Card variant="raised" className="flex flex-col gap-1">

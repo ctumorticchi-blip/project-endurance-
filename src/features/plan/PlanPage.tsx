@@ -1,5 +1,6 @@
 import { weeksUntilRace } from '@/core/goals/RaceGoal'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
 import { findWeekForDate } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
@@ -14,6 +15,7 @@ function formatDate(dateISO: string): string {
 export function PlanPage() {
   const plan = TrainingPlanRepository.load()
   const raceGoal = RaceGoalRepository.load()
+  const secondaryRaces = SecondaryRaceGoalRepository.loadAll()
 
   if (!plan || !raceGoal) {
     return (
@@ -50,7 +52,12 @@ export function PlanPage() {
 
       <ul className="flex flex-col gap-3">
         {plan.weeks.map((week) => (
-          <WeekCard key={week.id} week={week} isCurrent={week.id === currentWeek?.id} />
+          <WeekCard
+            key={week.id}
+            week={week}
+            isCurrent={week.id === currentWeek?.id}
+            secondaryRaces={secondaryRaces}
+          />
         ))}
       </ul>
     </div>

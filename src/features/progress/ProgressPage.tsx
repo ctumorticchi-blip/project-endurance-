@@ -3,8 +3,9 @@ import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepos
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
+import { buildLastWeekSummary } from '@/engine/history/buildLastWeekSummary'
+import { buildLoadTrend } from '@/engine/history/buildLoadTrend'
 import { buildProgressSummary } from '@/engine/history/buildProgressSummary'
-import { buildWeeklyVolumeTrend } from '@/engine/history/buildWeeklyVolumeTrend'
 import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
@@ -13,7 +14,8 @@ import { StatTile } from '@/shared/components/StatTile'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
 import type { Discipline } from '@/shared/types/common'
 import { formatHoursAndMinutes } from '@/shared/utils/duration'
-import { WeeklyVolumeChart } from './WeeklyVolumeChart'
+import { LoadTrendChart } from './LoadTrendChart'
+import { WeekSummaryCard } from './WeekSummaryCard'
 
 export function ProgressPage() {
   const plan = TrainingPlanRepository.load()
@@ -33,13 +35,16 @@ export function ProgressPage() {
 
   const disciplineEntries = Object.entries(summary.disciplineMinutes) as [Discipline, number][]
   const maxDisciplineMinutes = Math.max(1, ...disciplineEntries.map(([, minutes]) => minutes))
-  const weeklyVolume = buildWeeklyVolumeTrend(CompletedSessionRepository.loadAll(), new Date())
+  const loadTrend = buildLoadTrend(plan, CompletedSessionRepository.loadAll(), new Date())
+  const lastWeekSummary = buildLastWeekSummary(plan, CompletedSessionRepository.loadAll(), new Date())
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
       <div>
         <h1 className="text-lg font-semibold">Ton progrès</h1>
       </div>
+
+      {lastWeekSummary && <WeekSummaryCard summary={lastWeekSummary} />}
 
       <div className="grid grid-cols-2 gap-2">
         <StatTile
@@ -56,14 +61,12 @@ export function ProgressPage() {
         )}
       </div>
 
-      {summary.totalCompletedSessions > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold">Volume hebdomadaire</h2>
-          <Card variant="muted">
-            <WeeklyVolumeChart points={weeklyVolume} />
-          </Card>
-        </section>
-      )}
+      <section>
+        <h2 className="mb-2 text-sm font-semibold">Charge hebdomadaire : prévue vs réalisée</h2>
+        <Card variant="muted">
+          <LoadTrendChart points={loadTrend} />
+        </Card>
+      </section>
 
       <section>
         <h2 className="mb-1 text-sm font-semibold">Ce que j'ai appris</h2>

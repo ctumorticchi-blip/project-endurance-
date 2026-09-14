@@ -362,7 +362,7 @@ test.describe('progress', () => {
     await page.waitForSelector('nav[aria-label="Navigation principale"]')
 
     await page.getByRole('link', { name: 'Progrès' }).click()
-    await page.waitForSelector('text=Volume hebdomadaire')
+    await page.waitForSelector('text=Charge hebdomadaire')
     await scanAxe(page)
   })
 })
@@ -508,6 +508,33 @@ test.describe('profile', () => {
     // Uncheck the only rest day without picking another.
     await page.getByRole('checkbox', { name: 'Repos le Dimanche' }).click()
     await expect(page.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
+  })
+
+  test('adding a secondary race shows it on Today and lets it be removed again', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Autres courses')
+    await page.getByRole('button', { name: 'Ajouter' }).click()
+    await page.getByLabel('Nom de la course').fill('Triathlon de Test')
+    const raceDate = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000)
+    await page.getByLabel('Date').fill(raceDate.toISOString().slice(0, 10))
+    await page.getByRole('radio', { name: 'Sprint' }).click()
+    await page.getByRole('button', { name: 'Ajouter', exact: true }).click()
+    await page.waitForSelector('text=Triathlon de Test')
+    await scanAxe(page)
+
+    await page.getByRole('link', { name: 'Aujourd’hui' }).click()
+    await page.waitForSelector('text=Autres courses à venir')
+    await expect(page.getByText('Triathlon de Test')).toBeVisible()
+    await scanAxe(page)
+
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Triathlon de Test')
+    await page.getByRole('button', { name: 'Supprimer' }).click()
+    await expect(page.getByText('Triathlon de Test')).toHaveCount(0)
+
+    await page.getByRole('link', { name: 'Aujourd’hui' }).click()
+    await expect(page.getByText('Autres courses à venir')).toHaveCount(0)
   })
 })
 

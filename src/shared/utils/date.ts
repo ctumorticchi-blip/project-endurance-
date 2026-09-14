@@ -24,3 +24,16 @@ export function isAfterOrEqual(a: DateISO, b: DateISO): boolean {
 export function isBefore(a: DateISO, b: DateISO): boolean {
   return new Date(a).getTime() < new Date(b).getTime()
 }
+
+export const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
+
+/** Monday of the calendar week containing `date`, at local midnight —
+ * the shared week boundary every history/trend bucketing function uses. */
+export function mondayOf(date: Date): Date {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = (day === 0 ? -6 : 1) - day
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}

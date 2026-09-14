@@ -6,6 +6,7 @@ import { AvailabilityRepository } from '@/core/availability/AvailabilityReposito
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
 import { findWeekForDate } from '@/core/training/TrainingPlan'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
@@ -34,6 +35,7 @@ import { CurrentMealCard } from './CurrentMealCard'
 import { NutritionSetupPrompt } from './NutritionSetupPrompt'
 import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
+import { UpcomingRaces } from './UpcomingRaces'
 
 const PRIORITY_LABELS: Record<string, string> = {
   key: 'Clé',
@@ -68,6 +70,9 @@ export function TodayPage() {
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
   const week = findWeekForDate(plan, today)
+  const upcomingSecondaryRaces = SecondaryRaceGoalRepository.loadAll()
+    .filter((r) => r.raceDate >= today)
+    .sort((a, b) => (a.raceDate < b.raceDate ? -1 : a.raceDate > b.raceDate ? 1 : 0))
 
   // "Done today" — a completed/partial feedback already logged for
   // today's own session — takes priority over the pre-session view: once
@@ -141,6 +146,7 @@ export function TodayPage() {
     <div className="flex flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">Aujourd'hui</h1>
       <RaceCountdown raceLabel={summary.raceLabel} daysUntilRace={summary.daysUntilRace} />
+      <UpcomingRaces races={upcomingSecondaryRaces} />
       <NutritionSetupPrompt />
       <CurrentMealCard date={today} session={summary.session} nextSession={summary.nextSession} />
 

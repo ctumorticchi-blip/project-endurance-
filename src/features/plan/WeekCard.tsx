@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { SecondaryRaceGoal } from '@/core/goals/SecondaryRaceGoal'
 import { TRAINING_PHASE_LABELS, type TrainingWeek } from '@/core/training/TrainingPlan'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
@@ -19,11 +20,17 @@ function formatDate(dateISO: string): string {
 
 /** Every calendar day of the week, each paired with its session when one
  * exists — a day with none is a real rest day, shown as such rather than
- * silently omitted (brief feedback: rest days should be visible). */
-function weekDays(week: TrainingWeek) {
+ * silently omitted (brief feedback: rest days should be visible). Also
+ * paired with a secondary (B/C) race landing on that day, if any — purely
+ * informational, never changes what the day itself shows. */
+function weekDays(week: TrainingWeek, secondaryRaces: SecondaryRaceGoal[]) {
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(week.startDate, i)
-    return { date, session: week.sessions.find((s) => s.date === date) }
+    return {
+      date,
+      session: week.sessions.find((s) => s.date === date),
+      race: secondaryRaces.find((r) => r.raceDate === date),
+    }
   })
 }
 
@@ -33,9 +40,10 @@ interface WeekCardProps {
    * every other week starts collapsed to a one-line summary so a full
    * multi-month plan doesn't dump every session on screen at once. */
   isCurrent: boolean
+  secondaryRaces?: SecondaryRaceGoal[]
 }
 
-export function WeekCard({ week, isCurrent }: WeekCardProps) {
+export function WeekCard({ week, isCurrent, secondaryRaces = [] }: WeekCardProps) {
   const [expanded, setExpanded] = useState(isCurrent)
   const totalMinutes = week.sessions.reduce((sum, s) => sum + s.estimatedDurationMin, 0)
   const summaryId = `${week.id}-sessions`
@@ -65,7 +73,7 @@ export function WeekCard({ week, isCurrent }: WeekCardProps) {
 
       {expanded && (
         <ul id={summaryId} className="mt-2 flex flex-col gap-1">
-          {weekDays(week).map(({ date, session }) => (
+          {weekDays(week, secondaryRaces).map(({ date, session, race }) => (
             <li key={date}>
               <Link
                 to={`/day/${date}`}
@@ -79,6 +87,7 @@ export function WeekCard({ week, isCurrent }: WeekCardProps) {
                       {formatDate(date)} · {DISCIPLINE_LABELS[session.discipline]} — {session.title}
                     </span>
                     <span className="flex shrink-0 items-center gap-1.5 text-text-muted">
+                      {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
                       <Badge tone={PRIORITY_TONE[session.priority]}>{PRIORITY_LABELS[session.priority]}</Badge>
                       {session.estimatedDurationMin} min
                     </span>
@@ -86,7 +95,10 @@ export function WeekCard({ week, isCurrent }: WeekCardProps) {
                 ) : (
                   <>
                     <span className="text-text-muted">{formatDate(date)}</span>
-                    <Badge tone="neutral">Repos</Badge>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
+                      <Badge tone="neutral">Repos</Badge>
+                    </span>
                   </>
                 )}
               </Link>
