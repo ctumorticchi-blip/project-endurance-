@@ -4,7 +4,8 @@ import { AvailabilityRepository } from '@/core/availability/AvailabilityReposito
 import type { Availability, DayAvailability } from '@/core/availability/Availability'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
-import { regeneratePlanFromToday } from '@/sports/triathlon/planning/regeneratePlan'
+import { regeneratePlanFromToday as regenerateRunningPlanFromToday } from '@/sports/running/planning/regeneratePlan'
+import { regeneratePlanFromToday as regenerateTriathlonPlanFromToday } from '@/sports/triathlon/planning/regeneratePlan'
 import { Button } from '@/shared/components/Button'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import type { Weekday } from '@/shared/types/common'
@@ -28,17 +29,6 @@ export function EditAvailabilityPage() {
     )
   }
 
-  if (raceGoal.sport !== 'triathlon') {
-    // TODO(RUN-5): branch regeneratePlanFromToday by sport once a running
-    // plan generator exists (RUN-3) — for now this screen stays triathlon-only.
-    return (
-      <PlaceholderPage
-        title="Disponibilités"
-        description="La modification des disponibilités arrive bientôt pour les programmes course à pied."
-      />
-    )
-  }
-
   const setDay = (day: Weekday, patch: Partial<DayAvailability>) => {
     setDraft({ ...draft, weeklyPattern: { ...draft.weeklyPattern, [day]: { ...draft.weeklyPattern[day], ...patch } } })
   }
@@ -48,7 +38,10 @@ export function EditAvailabilityPage() {
   const handleSave = () => {
     if (!canSave) return
     AvailabilityRepository.save(draft)
-    const { plan } = regeneratePlanFromToday({ currentPlan, raceGoal, availability: draft })
+    const { plan } =
+      raceGoal.sport === 'triathlon'
+        ? regenerateTriathlonPlanFromToday({ currentPlan, raceGoal, availability: draft })
+        : regenerateRunningPlanFromToday({ currentPlan, raceGoal, availability: draft })
     TrainingPlanRepository.save(plan)
     setSaved(true)
   }
@@ -83,6 +76,7 @@ export function EditAvailabilityPage() {
         restDays={draft.restDays ?? []}
         onChangeDay={setDay}
         onChangeRestDays={(restDays) => setDraft({ ...draft, restDays })}
+        showPoolAccess={raceGoal.sport === 'triathlon'}
       />
 
       <div className="flex gap-2 pt-2">

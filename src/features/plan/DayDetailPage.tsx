@@ -144,6 +144,7 @@ export function DayDetailPage() {
               availability={availability}
               onSwapped={handleSwap}
               onConvertedToRest={handleConvertToRest}
+              allowDisciplineSwap={raceGoal.sport === 'triathlon'}
             />
           )}
         </>

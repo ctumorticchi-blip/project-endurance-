@@ -20,6 +20,9 @@ interface SwapSessionControlProps {
    * removes the session and then decides whether to offer moving it to
    * another day this week (brief feedback: ask each time, don't guess). */
   onConvertedToRest: () => void
+  /** A single-discipline plan (running) has nothing to swap to — only
+   * "Repos" makes sense. Defaults to true (triathlon). */
+  allowDisciplineSwap?: boolean
 }
 
 /**
@@ -36,13 +39,16 @@ export function SwapSessionControl({
   availability,
   onSwapped,
   onConvertedToRest,
+  allowDisciplineSwap = true,
 }: SwapSessionControlProps) {
   const [open, setOpen] = useState(false)
   const [choice, setChoice] = useState<SwapChoice>()
 
-  const viableDisciplines = SWAPPABLE_DISCIPLINES.filter(
-    (d) => swapSessionDiscipline(session, d, { phase, week, availability }) !== undefined,
-  )
+  const viableDisciplines = allowDisciplineSwap
+    ? SWAPPABLE_DISCIPLINES.filter(
+        (d) => swapSessionDiscipline(session, d, { phase, week, availability }) !== undefined,
+      )
+    : []
   const choices: { value: SwapChoice; label: string }[] = [
     ...viableDisciplines.map((d) => ({ value: d, label: DISCIPLINE_LABELS[d] })),
     { value: 'rest', label: 'Repos' },
@@ -55,8 +61,30 @@ export function SwapSessionControl({
         onClick={() => setOpen(true)}
         className="text-center text-xs text-text-muted underline"
       >
-        Changer de séance
+        {allowDisciplineSwap ? 'Changer de séance' : 'Convertir en repos'}
       </button>
+    )
+  }
+
+  if (!allowDisciplineSwap) {
+    return (
+      <div className="flex flex-col gap-3 rounded-[var(--radius-sm)] border border-border bg-surface p-3">
+        <p className="text-sm">Convertir cette séance en jour de repos ?</p>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setOpen(false)} className="flex-1">
+            Annuler
+          </Button>
+          <Button
+            onClick={() => {
+              onConvertedToRest()
+              setOpen(false)
+            }}
+            className="flex-1"
+          >
+            Confirmer
+          </Button>
+        </div>
+      </div>
     )
   }
 

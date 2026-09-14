@@ -143,25 +143,29 @@ export function ProfilePage() {
       <Card className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold">Données de calibration</h2>
 
-        <div className="flex items-center justify-between text-sm">
-          <span>FTP vélo</span>
-          <span className="text-text-muted">
-            {metrics.ftpWatts ? `${metrics.ftpWatts} W` : 'Non renseignée'}
-          </span>
-        </div>
-        <Link to="/profile/tests/ftp" className="text-xs text-accent underline">
-          Faire un test FTP
-        </Link>
+        {profile.sport === 'triathlon' && (
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <span>FTP vélo</span>
+              <span className="text-text-muted">
+                {metrics.ftpWatts ? `${metrics.ftpWatts} W` : 'Non renseignée'}
+              </span>
+            </div>
+            <Link to="/profile/tests/ftp" className="text-xs text-accent underline">
+              Faire un test FTP
+            </Link>
 
-        <div className="mt-2 flex items-center justify-between text-sm">
-          <span>CSS natation</span>
-          <span className="text-text-muted">
-            {metrics.cssSecPer100m ? formatPaceMinSec(metrics.cssSecPer100m, '/100m') : 'Non renseignée'}
-          </span>
-        </div>
-        <Link to="/profile/tests/css" className="text-xs text-accent underline">
-          Faire un test CSS
-        </Link>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <span>CSS natation</span>
+              <span className="text-text-muted">
+                {metrics.cssSecPer100m ? formatPaceMinSec(metrics.cssSecPer100m, '/100m') : 'Non renseignée'}
+              </span>
+            </div>
+            <Link to="/profile/tests/css" className="text-xs text-accent underline">
+              Faire un test CSS
+            </Link>
+          </>
+        )}
 
         <div className="mt-2 flex items-center justify-between text-sm">
           <span>Allure seuil course</span>
@@ -219,8 +223,9 @@ export function ProfilePage() {
           )}
           {!zones.heartRate && !zones.power && !zones.runPace && !zones.swimPace && (
             <p className="text-xs text-text-muted">
-              Renseigne au moins une donnée connue (FC, FTP, CSS, allure seuil) pour voir tes
-              zones calculées.
+              {profile.sport === 'triathlon'
+                ? 'Renseigne au moins une donnée connue (FC, FTP, CSS, allure seuil) pour voir tes zones calculées.'
+                : 'Renseigne au moins une donnée connue (FC, allure seuil) pour voir tes zones calculées.'}
             </p>
           )}
         </Card>
