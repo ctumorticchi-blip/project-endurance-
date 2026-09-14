@@ -6,13 +6,12 @@ import { Button } from '@/shared/components/Button'
 import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { formatPaceMinSec } from '@/shared/utils/pace'
 
 const TEST_DURATION_SEC = 20 * 60
 
 function formatPace(secPerKm: number): string {
-  const min = Math.floor(secPerKm / 60)
-  const sec = secPerKm % 60
-  return `${min}:${String(sec).padStart(2, '0')}/km`
+  return formatPaceMinSec(secPerKm, '/km')
 }
 
 export function ThresholdPaceTestPage() {

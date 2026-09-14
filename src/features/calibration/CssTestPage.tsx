@@ -3,15 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { computeCssSecPer100m } from '@/engine/calibration/computeCssFromTest'
 import { Button } from '@/shared/components/Button'
-import { Field } from '@/shared/components/Field'
-import { INPUT_CLASSES } from '@/shared/components/inputStyles'
+import { MinSecField } from '@/shared/components/MinSecField'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { formatPaceMinSec } from '@/shared/utils/pace'
+
+function toTotalSeconds(minutes: number | '', seconds: number | ''): number | undefined {
+  if (minutes === '' || seconds === '') return undefined
+  const total = minutes * 60 + seconds
+  return total > 0 ? total : undefined
+}
 
 export function CssTestPage() {
   const navigate = useNavigate()
   const profile = AthleteProfileRepository.load()
-  const [time400, setTime400] = useState<number | ''>('')
-  const [time200, setTime200] = useState<number | ''>('')
+  const [min400, setMin400] = useState<number | ''>('')
+  const [sec400, setSec400] = useState<number | ''>('')
+  const [min200, setMin200] = useState<number | ''>('')
+  const [sec200, setSec200] = useState<number | ''>('')
   const [result, setResult] = useState<{ before?: number; after: number } | null>(null)
   const [error, setError] = useState<string>()
 
@@ -19,10 +27,12 @@ export function CssTestPage() {
     return <PlaceholderPage title="Profil introuvable" description="Complète d'abord l'onboarding." />
   }
 
-  const canSubmit = time400 !== '' && time200 !== '' && time400 > 0 && time200 > 0
+  const time400 = toTotalSeconds(min400, sec400)
+  const time200 = toTotalSeconds(min200, sec200)
+  const canSubmit = time400 !== undefined && time200 !== undefined
 
   const handleSubmit = () => {
-    if (!canSubmit) return
+    if (time400 === undefined || time200 === undefined) return
     setError(undefined)
     try {
       const after = computeCssSecPer100m(400, time400, 200, time200)
@@ -42,8 +52,8 @@ export function CssTestPage() {
       <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
         <h1 className="text-lg font-semibold">CSS mise à jour</h1>
         <p className="text-sm text-text-muted">
-          {result.before ? `${result.before} s/100m → ` : ''}
-          <span className="font-semibold text-text">{result.after} s/100m</span>
+          {result.before ? `${formatPaceMinSec(result.before, '/100m')} → ` : ''}
+          <span className="font-semibold text-text">{formatPaceMinSec(result.after, '/100m')}</span>
         </p>
         <Button onClick={() => void navigate('/profile', { replace: true })} className="w-full">
           Retour au profil
@@ -63,25 +73,23 @@ export function CssTestPage() {
         </p>
       </div>
 
-      <Field label="Temps du 400m (secondes)">
-        <input
-          type="number"
-          min={0}
-          value={time400}
-          onChange={(e) => setTime400(e.target.value === '' ? '' : Number(e.target.value))}
-          className={INPUT_CLASSES}
-        />
-      </Field>
+      <MinSecField
+        legend="Temps du 400m"
+        idPrefix="time-400"
+        minutes={min400}
+        seconds={sec400}
+        onMinutesChange={setMin400}
+        onSecondsChange={setSec400}
+      />
 
-      <Field label="Temps du 200m (secondes)">
-        <input
-          type="number"
-          min={0}
-          value={time200}
-          onChange={(e) => setTime200(e.target.value === '' ? '' : Number(e.target.value))}
-          className={INPUT_CLASSES}
-        />
-      </Field>
+      <MinSecField
+        legend="Temps du 200m"
+        idPrefix="time-200"
+        minutes={min200}
+        seconds={sec200}
+        onMinutesChange={setMin200}
+        onSecondsChange={setSec200}
+      />
 
       {error && (
         <p role="alert" className="text-xs text-danger">
