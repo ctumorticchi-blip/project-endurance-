@@ -10,10 +10,11 @@ import type { DateISO, Discipline } from '@/shared/types/common'
 import { addDays } from '@/shared/utils/date'
 import { instantiateSessionTemplate } from '../sessions'
 import { pickBestFittingTemplate } from './pickTemplate'
+import { getSessionTier, getWeekLoadMultiplier } from './progressionCurve'
 import {
   applyBrickInsertion,
+  getSecondaryType,
   PRIMARY_SESSION_TYPE_BY_PHASE,
-  SECONDARY_SESSION_TYPE_BY_PHASE,
   shouldInsertBrick,
   WEEKLY_SLOT_DISCIPLINES,
   WEEKLY_SLOT_PRIORITIES,
@@ -25,6 +26,10 @@ export interface BuildWeekSessionsInput {
   planEndDateExclusive: DateISO
   phase: TrainingPhaseName
   weekIndexInPhase: number
+  /** How many weeks this phase spans in total — drives the load curve
+   * (progressive overload + deload cycle within a phase, descending taper).
+   * Defaults to a full 4-week cycle when omitted. */
+  weeksInPhase?: number
   weekId: string
   availability: Availability
 }
@@ -33,7 +38,21 @@ export interface BuildWeekSessionsInput {
 const MIN_VIABLE_SESSION_MINUTES = 15
 
 export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession[] {
-  const { weekStart, planEndDateExclusive, phase, weekIndexInPhase, weekId, availability } = input
+  const {
+    weekStart,
+    planEndDateExclusive,
+    phase,
+    weekIndexInPhase,
+    weeksInPhase = 4,
+    weekId,
+    availability,
+  } = input
+
+  // Where this week sits on its phase's load curve — see
+  // progressionCurve.ts for the periodization rationale (progressive
+  // overload within a block, a deload week, a descending taper).
+  const loadMultiplier = getWeekLoadMultiplier(phase, weekIndexInPhase, weeksInPhase)
+  const tier = getSessionTier(loadMultiplier)
 
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter(
     (date) => date < planEndDateExclusive,
@@ -98,14 +117,17 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
 
     const preferredType =
       effectiveDiscipline === 'bike' || effectiveDiscipline === 'run' || effectiveDiscipline === 'swim'
-        ? (effectiveOccurrence === 0 ? PRIMARY_SESSION_TYPE_BY_PHASE : SECONDARY_SESSION_TYPE_BY_PHASE)[
-            phase
-          ][effectiveDiscipline]
+        ? effectiveOccurrence === 0
+          ? PRIMARY_SESSION_TYPE_BY_PHASE[phase][effectiveDiscipline]
+          : getSecondaryType(phase, effectiveDiscipline, weekIndexInPhase, tier)
         : effectiveDiscipline === 'brick'
           ? 'brick'
           : undefined
 
-    const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes)
+    const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes, {
+      tier,
+      rotationKey: weekIndexInPhase,
+    })
     if (!template) continue
 
     // A slot only earns "key" if it actually delivers the anchor stimulus.

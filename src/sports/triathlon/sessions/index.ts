@@ -6,7 +6,7 @@ import { MOBILITY_SESSIONS, STRENGTH_SESSIONS } from './strengthMobilitySessions
 import { RUN_SESSIONS } from './runSessions'
 import { SWIM_SESSIONS } from './swimSessions'
 
-export type { SessionTemplate, BlockTemplate } from './common'
+export type { SessionTemplate, BlockTemplate, SessionTier } from './common'
 export { instantiateSessionTemplate } from './common'
 
 export const SESSION_CATALOG: SessionTemplate[] = [

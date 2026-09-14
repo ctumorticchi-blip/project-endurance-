@@ -5,6 +5,7 @@ export const STRENGTH_SESSIONS: SessionTemplate[] = [
     id: 'strength-general',
     discipline: 'strength',
     sessionType: 'strength',
+    tier: 'standard',
     title: 'Renforcement général',
     objective:
       'Renforcer les groupes musculaires clés du triathlète (chaîne postérieure, gainage, stabilité du bassin) pour mieux tolérer la charge d\'entraînement.',
@@ -29,6 +30,7 @@ export const MOBILITY_SESSIONS: SessionTemplate[] = [
     id: 'mobility-general',
     discipline: 'mobility',
     sessionType: 'mobility',
+    tier: 'standard',
     title: 'Mobilité générale',
     objective: 'Entretenir l\'amplitude articulaire et prévenir les raideurs qui limitent la technique.',
     estimatedDurationMin: 15,

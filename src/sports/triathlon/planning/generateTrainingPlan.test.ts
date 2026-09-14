@@ -99,6 +99,24 @@ describe('generateTrainingPlan', () => {
     expect(warnings.length).toBeGreaterThan(0)
   })
 
+  it('evolves week to week within a phase instead of repeating an identical week (real progression + deload)', () => {
+    const today = new Date('2026-01-05T00:00:00')
+    const raceGoal = createRaceGoal({ distance: 'olympic', raceDate: '2026-08-01' }) // long runway
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+
+    const buildWeeks = plan.weeks.filter((w) => w.phase === 'build')
+    expect(buildWeeks.length).toBeGreaterThanOrEqual(4)
+
+    const loads = buildWeeks.map((w) => w.targetLoad)
+    // Not every week in the phase carries the same load — there's a real
+    // progressive-overload-then-deload curve, not a flat repeat.
+    expect(new Set(loads).size).toBeGreaterThan(1)
+    // Some week in the block is a deliberate deload, lighter than the
+    // hardest week that came before it.
+    const peak = Math.max(...loads)
+    expect(Math.min(...loads)).toBeLessThan(peak * 0.85)
+  })
+
   it('produces no negative-duration sessions', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ distance: 'sprint', raceDate: '2026-03-30' })

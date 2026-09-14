@@ -44,10 +44,24 @@ export function cooldownBlock(durationMin: number, label = 'Retour au calme'): B
   }
 }
 
+/**
+ * Where a template sits on its (discipline, sessionType)'s load ladder —
+ * lets the generator express real week-to-week progression and periodic
+ * deload without inventing a continuous, falsely-precise scaling formula:
+ * every step is a literal, authored, inspectable session. `standard` is
+ * the everyday version; `reduced`/`minimal` are lighter (deload weeks,
+ * taper); `peak` is the hardest version of that same session type, used
+ * on a phase's toughest week. Not every (discipline, sessionType) has all
+ * four — only the types actually used as a phase's anchor (`key`) session
+ * need the full ladder (see `sports/triathlon/planning/progressionCurve.ts`).
+ */
+export type SessionTier = 'minimal' | 'reduced' | 'standard' | 'peak'
+
 export interface SessionTemplate {
   id: string
   discipline: Discipline
   sessionType: SessionType
+  tier: SessionTier
   title: string
   objective: string
   blocks: BlockTemplate[]

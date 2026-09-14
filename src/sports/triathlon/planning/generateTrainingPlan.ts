@@ -38,6 +38,14 @@ export function generateTrainingPlan(
     )
   }
 
+  // How many weeks each phase spans in total — phases are always
+  // contiguous blocks (see phaseAllocation.ts), so a simple count of each
+  // name's occurrences gives the current phase's full length, which the
+  // load curve needs to place a week correctly within its block (e.g. a
+  // 2-week taper's first week isn't as light as its last).
+  const weeksInPhase = new Map<TrainingPhaseName, number>()
+  for (const phase of phases) weeksInPhase.set(phase, (weeksInPhase.get(phase) ?? 0) + 1)
+
   const weeks: TrainingWeek[] = []
   let weekIndexInPhase = 0
   let previousPhase: TrainingPhaseName | undefined
@@ -55,6 +63,7 @@ export function generateTrainingPlan(
       planEndDateExclusive: input.raceGoal.raceDate,
       phase,
       weekIndexInPhase,
+      weeksInPhase: weeksInPhase.get(phase) ?? 1,
       weekId,
       availability: input.availability,
     })

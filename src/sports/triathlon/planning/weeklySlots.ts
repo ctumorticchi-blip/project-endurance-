@@ -2,6 +2,7 @@ import type { TrainingPhaseName } from '@/core/training/TrainingPlan'
 import type { SessionPriority } from '@/core/training/PlannedSession'
 import type { Discipline } from '@/shared/types/common'
 import type { SessionType } from '@/core/training/PlannedSession'
+import type { SessionTier } from '@/sports/triathlon/sessions/common'
 
 /**
  * For a given number of available days in the week, which discipline goes
@@ -49,7 +50,10 @@ export const PRIMARY_SESSION_TYPE_BY_PHASE: Record<
 }
 
 /** The session type used for any *subsequent* appearance of the same
- * discipline that week (secondary/optional touch — lighter than the anchor). */
+ * discipline that week (secondary/optional touch — lighter than the anchor)
+ * on a calm week: base/taper/race, or a deload/very-light week anywhere.
+ * The default to fall back on once the build/specific rotation below (or
+ * a manual session swap, which has no week-in-phase context) doesn't apply. */
 export const SECONDARY_SESSION_TYPE_BY_PHASE: Record<
   TrainingPhaseName,
   Record<EnduranceDiscipline, SessionType>
@@ -59,6 +63,43 @@ export const SECONDARY_SESSION_TYPE_BY_PHASE: Record<
   specific: { bike: 'sweet-spot', run: 'tempo', swim: 'endurance' },
   taper: { bike: 'recovery', run: 'recovery', swim: 'recovery' },
   race: { bike: 'recovery', run: 'recovery', swim: 'recovery' },
+}
+
+/**
+ * Development/specific secondary touch, on a normal-or-harder week: a
+ * 4-week rotation instead of always the same type. Without this, the
+ * secondary slot repeated the identical grey-zone session (sweet
+ * spot/tempo/endurance) week after week — no continued long-endurance
+ * exposure once base phase ended, and no top-end (VO2max) stimulus at all
+ * anywhere in the plan, despite the catalog having it. A real polarized
+ * week mixes a long touch, an easy touch, and an occasional sharp one.
+ */
+const BUILD_SPECIFIC_SECONDARY_ROTATION: Record<EnduranceDiscipline, SessionType[]> = {
+  bike: ['endurance', 'long', 'vo2max', 'endurance'],
+  run: ['endurance', 'long', 'intervals', 'endurance'],
+  swim: ['technique', 'endurance', 'intervals', 'endurance'],
+}
+
+/**
+ * Picks the secondary-touch session type for build/specific phases. On a
+ * deload/very-light week (`reduced`/`minimal` tier) the rotation is
+ * skipped in favour of the calm default — a deload week should reduce
+ * both volume *and* intensity broadly, not add a sharpening touch.
+ * Base/taper/race never rotate: base is about steadily building volume,
+ * taper/race about staying light, neither needs manufactured variety.
+ */
+export function getSecondaryType(
+  phase: TrainingPhaseName,
+  discipline: EnduranceDiscipline,
+  weekIndexInPhase: number,
+  tier: SessionTier,
+): SessionType {
+  const calmDefault = SECONDARY_SESSION_TYPE_BY_PHASE[phase][discipline]
+  const isRotationEligible = (phase === 'build' || phase === 'specific') && tier !== 'reduced' && tier !== 'minimal'
+  if (!isRotationEligible) return calmDefault
+
+  const rotation = BUILD_SPECIFIC_SECONDARY_ROTATION[discipline]
+  return rotation[weekIndexInPhase % rotation.length]!
 }
 
 /**

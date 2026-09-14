@@ -78,4 +78,73 @@ describe('buildWeekSessions', () => {
       expect(scheduledDates.size).toBeLessThanOrEqual(4)
     })
   })
+
+  describe('progression across weeks of the same phase', () => {
+    function buildAt(weekIndexInPhase: number, weeksInPhase = 8) {
+      return buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'specific',
+        weekIndexInPhase,
+        weeksInPhase,
+        weekId: `week-${weekIndexInPhase}`,
+        availability: availabilityAllDays(120),
+      })
+    }
+
+    it('gives the deload week (index 3 of the 4-week cycle) a lighter anchor session than the peak week before it', () => {
+      const peakWeekBike = buildAt(2).find((s) => s.discipline === 'bike' && s.sessionType === 'threshold')
+      const deloadWeekBike = buildAt(3).find((s) => s.discipline === 'bike' && s.sessionType === 'threshold')
+      expect(peakWeekBike).toBeDefined()
+      expect(deloadWeekBike).toBeDefined()
+      expect(deloadWeekBike!.estimatedDurationMin).toBeLessThan(peakWeekBike!.estimatedDurationMin)
+    })
+
+    it('varies the anchor session structure between two standard-tier weeks (real diversification, not the identical session)', () => {
+      // Weeks 0 and 1 are both 'standard' tier in the specific-phase cycle
+      // (0.9 and 1.02 respectively land in different tiers... use base
+      // instead, whose weeks 0/1 are both standard: 0.85 and 0.95).
+      const weekA = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'base',
+        weekIndexInPhase: 0,
+        weeksInPhase: 8,
+        weekId: 'week-a',
+        availability: availabilityAllDays(180),
+      }).find((s) => s.discipline === 'bike' && s.sessionType === 'long')
+      const weekB = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'base',
+        weekIndexInPhase: 1,
+        weeksInPhase: 8,
+        weekId: 'week-b',
+        availability: availabilityAllDays(180),
+      }).find((s) => s.discipline === 'bike' && s.sessionType === 'long')
+
+      expect(weekA).toBeDefined()
+      expect(weekB).toBeDefined()
+      expect(weekA!.title).not.toBe(weekB!.title)
+    })
+
+    it('injects a long-endurance or VO2max secondary touch in build/specific instead of always the same grey-zone type', () => {
+      const secondaryTypesAcrossCycle = new Set<string>()
+      for (let i = 0; i < 4; i++) {
+        const sessions = buildWeekSessions({
+          weekStart: '2026-01-05',
+          planEndDateExclusive: '2027-01-01',
+          phase: 'build',
+          weekIndexInPhase: i,
+          weeksInPhase: 8,
+          weekId: `week-${i}`,
+          availability: availabilityAllDays(120),
+        })
+        const bikeSessions = sessions.filter((s) => s.discipline === 'bike')
+        const secondary = bikeSessions.find((s) => s.priority !== 'key')
+        if (secondary) secondaryTypesAcrossCycle.add(secondary.sessionType)
+      }
+      expect(secondaryTypesAcrossCycle.size).toBeGreaterThan(1)
+    })
+  })
 })

@@ -5,6 +5,7 @@ export const BRICK_SESSIONS: SessionTemplate[] = [
     id: 'brick-short',
     discipline: 'brick',
     sessionType: 'brick',
+    tier: 'standard',
     title: 'Brick court vélo-course',
     objective:
       'Habituer tes jambes à la sensation de course juste après le vélo — la clé du triathlon.',
@@ -39,6 +40,7 @@ export const BRICK_SESSIONS: SessionTemplate[] = [
     id: 'brick-race-specific',
     discipline: 'brick',
     sessionType: 'race-specific',
+    tier: 'standard',
     title: 'Brick race-specific',
     objective:
       'Répéter les allures et sensations de ta course, vélo puis course, en conditions proches du jour J.',
@@ -71,6 +73,7 @@ export const BRICK_SESSIONS: SessionTemplate[] = [
     id: 'transition-practice',
     discipline: 'brick',
     sessionType: 'transition',
+    tier: 'standard',
     title: 'Pratique des transitions',
     objective: 'Automatiser les gestes de T1 (natation → vélo) et T2 (vélo → course) pour gagner du temps sans stress le jour de la course.',
     estimatedDurationMin: 30,
