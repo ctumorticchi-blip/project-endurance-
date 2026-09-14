@@ -36,6 +36,7 @@ npm run test:watch   # tests en mode watch
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
 npm run check        # typecheck + lint + test + build (à exécuter avant tout commit de milestone)
+npm run test:e2e     # Playwright + axe-core, écrans réels dans un vrai navigateur (M1.8)
 ```
 
 ## Architecture
@@ -74,13 +75,26 @@ Règle structurante : **la logique sportive ne dépend jamais de React** —
 
 ## Tests
 
-122 tests (26 fichiers) au moment du rapport final de M0. Le moteur
-(`engine/`, `sports/*/planning`, `sports/*/sessions`) est significativement
-plus testé que l'UI décorative — voir la stratégie de test dans
-`docs/adaptation-engine.md` (invariants) et les fichiers `*.test.ts(x)`
-colocalisés avec le code qu'ils couvrent. `src/simulation/scenarios.test.ts`
-fait tourner des scénarios athlète réalistes de bout en bout (§57 du brief
-produit) plutôt que de tester une fonction isolément.
+Deux suites, pour deux natures de bug différentes :
+
+- **`npm run test`** (Vitest + Testing Library + jsdom) : 135 tests au
+  moment de M1.8. Le moteur (`engine/`, `sports/*/planning`,
+  `sports/*/sessions`) est significativement plus testé que l'UI
+  décorative — voir la stratégie de test dans `docs/adaptation-engine.md`
+  (invariants) et les fichiers `*.test.ts(x)` colocalisés avec le code
+  qu'ils couvrent. `src/simulation/scenarios.test.ts` fait tourner des
+  scénarios athlète réalistes de bout en bout (§57 du brief produit)
+  plutôt que de tester une fonction isolément.
+- **`npm run test:e2e`** (Playwright + `@axe-core/playwright`, M1.8) :
+  jsdom ne peint rien, donc il ne peut pas détecter un vrai échec de
+  contraste WCAG — deux ont pourtant été trouvés et corrigés pendant M1
+  via des scripts manuels avec un vrai Chromium. `e2e/accessibility.spec.ts`
+  institutionnalise ce type de vérification : 21 scénarios (onboarding
+  écran par écran, Aujourd'hui, Session Player, séance manquée,
+  Programme, Progrès, Profil, tests de calibration, page introuvable),
+  chacun scanné avec `axe-core` (règles `wcag2a`/`wcag2aa`) dans un
+  navigateur réel. Pas inclus dans `npm run check` (plus lent, nécessite
+  un navigateur) — à exécuter explicitement.
 
 ## Déploiement
 
@@ -101,7 +115,8 @@ fait déjà pour `assets/*.js`) sans passer par le rewrite SPA.
 
 ## Roadmap actuelle
 
-**M0 — Le coach fonctionne — terminé** (M0.0 à M0.12, voir `docs/roadmap.md`
-pour le détail milestone par milestone). Le projet s'arrête ici pour
-évaluation humaine avant toute considération de M1 — voir
-`docs/m0-final-report.md` pour le bilan complet et les limites connues.
+**M0 — Le coach fonctionne — terminé** (M0.0 à M0.12) et **M1 — Excellent
+produit — terminé** (M1.0 à M1.8 : design system, Today/Session
+Player/Plan/Progress 2.0, explications du coach, onboarding premium, PWA,
+QA accessibilité). Voir `docs/roadmap.md` pour le détail milestone par
+milestone et `docs/m0-final-report.md` pour le bilan complet de M0.

@@ -1,9 +1,9 @@
-/// <reference types="vitest/config" />
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { configDefaults } from 'vitest/config'
 import { brand } from './src/config/brand.js'
 
 export default defineConfig({
@@ -46,5 +46,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // e2e/ is the separate Playwright suite (npm run test:e2e) — its
+    // *.spec.ts files would otherwise also match Vitest's default glob
+    // and collide with Playwright's own `test`/`test.describe`.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
