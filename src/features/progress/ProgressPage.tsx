@@ -4,9 +4,12 @@ import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackReposit
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import { buildProgressSummary } from '@/engine/history/buildProgressSummary'
+import { buildWeeklyVolumeTrend } from '@/engine/history/buildWeeklyVolumeTrend'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { ProgressBar } from '@/shared/components/ProgressBar'
 import { StatTile } from '@/shared/components/StatTile'
+import { WeeklyVolumeChart } from './WeeklyVolumeChart'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
   swim: 'Natation',
@@ -34,6 +37,8 @@ export function ProgressPage() {
   })
 
   const disciplineEntries = Object.entries(summary.disciplineMinutes)
+  const maxDisciplineMinutes = Math.max(1, ...disciplineEntries.map(([, minutes]) => minutes))
+  const weeklyVolume = buildWeeklyVolumeTrend(CompletedSessionRepository.loadAll(), new Date())
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
@@ -56,6 +61,15 @@ export function ProgressPage() {
         )}
       </div>
 
+      {summary.totalCompletedSessions > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">Volume hebdomadaire</h2>
+          <Card variant="muted">
+            <WeeklyVolumeChart points={weeklyVolume} />
+          </Card>
+        </section>
+      )}
+
       <section>
         <h2 className="mb-1 text-sm font-semibold">Ce que j'ai appris</h2>
         <Card variant="muted" className="text-sm text-text-muted">
@@ -66,11 +80,17 @@ export function ProgressPage() {
       {disciplineEntries.length > 0 && (
         <section>
           <h2 className="mb-2 text-sm font-semibold">Volume par discipline</h2>
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-2">
             {disciplineEntries.map(([discipline, minutes]) => (
-              <li key={discipline} className="flex justify-between text-sm">
-                <span>{DISCIPLINE_LABELS[discipline] ?? discipline}</span>
-                <span className="text-text-muted">{Math.round(minutes / 60)} h</span>
+              <li key={discipline} className="flex flex-col gap-1 text-sm">
+                <div className="flex justify-between">
+                  <span>{DISCIPLINE_LABELS[discipline] ?? discipline}</span>
+                  <span className="text-text-muted">{Math.round(minutes / 60)} h</span>
+                </div>
+                <ProgressBar
+                  value={(minutes / maxDisciplineMinutes) * 100}
+                  label={`${DISCIPLINE_LABELS[discipline] ?? discipline} : ${Math.round(minutes / 60)} heures`}
+                />
               </li>
             ))}
           </ul>
