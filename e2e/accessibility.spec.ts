@@ -227,6 +227,42 @@ test.describe('today', () => {
     await expect(page.getByText('Jour de repos')).toBeVisible()
     await scanAxe(page)
   })
+
+  test('shows a congrats summary instead of the pre-session view once completed', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Commencer' }).click()
+    await page.waitForSelector('text=Séance effectuée')
+    await page.getByRole('button', { name: 'Séance effectuée' }).click()
+    await page.waitForSelector("text=Comment s'est passée")
+    await page.getByRole('button', { name: '7', exact: true }).click()
+    await page.getByRole('radio', { name: 'Comme prévu' }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('nav[aria-label="Navigation principale"]')
+
+    await expect(page.getByText('Bravo, séance terminée')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fatigué' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Commencer' })).toHaveCount(0)
+    await scanAxe(page)
+  })
+
+  test('shows a time-of-day meal nudge once nutrition preferences are set', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+
+    await page.getByRole('link', { name: 'Aujourd’hui' }).click()
+    await page.waitForSelector('text=Vélo')
+    const text = await page.locator('body').innerText()
+    const hour = new Date().getHours()
+    const inAMealWindow = (hour >= 5 && hour < 11) || (hour >= 11 && hour < 16) || (hour >= 16 && hour < 22)
+    if (inAMealWindow) {
+      expect(text.toLowerCase()).toMatch(/petit-déjeuner|déjeuner|dîner/)
+      await expect(page.getByRole('link', { name: 'Voir le menu' })).toBeVisible()
+    }
+    await scanAxe(page)
+  })
 })
 
 test.describe('session player', () => {

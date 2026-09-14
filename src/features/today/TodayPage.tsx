@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { PerceivedDifficulty } from '@/core/history/SessionFeedback'
 import type { ReadinessLevel } from '@/core/history/ReadinessCheck'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
+import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { findWeekForDate } from '@/core/training/TrainingPlan'
@@ -28,6 +30,7 @@ import { toISODate } from '@/shared/utils/date'
 import { formatBlock } from '@/shared/utils/workoutBlock'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
 import { CoachInsight } from './CoachInsight'
+import { CurrentMealCard } from './CurrentMealCard'
 import { NutritionSetupPrompt } from './NutritionSetupPrompt'
 import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
@@ -44,6 +47,12 @@ const PRIORITY_TONE = {
   optional: 'neutral',
 } as const
 
+const DIFFICULTY_LABELS: Record<PerceivedDifficulty, string> = {
+  'harder-than-expected': 'Plus dur que prévu',
+  'as-expected': 'Comme prévu',
+  'easier-than-expected': 'Plus facile que prévu',
+}
+
 export function TodayPage() {
   const [adaptation, setAdaptation] = useState<AdaptationDecision | null>(null)
   const [pendingRest, setPendingRest] = useState<PlannedSession | null>(null)
@@ -59,6 +68,19 @@ export function TodayPage() {
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
   const week = findWeekForDate(plan, today)
+
+  // "Done today" — a completed/partial feedback already logged for
+  // today's own session — takes priority over the pre-session view: once
+  // it's done, the readiness check-in / swap / "Commencer" no longer make
+  // sense for it.
+  const feedbackForToday = summary.session
+    ? SessionFeedbackRepository.loadAll().find(
+        (f) => f.plannedSessionId === summary.session!.id && f.outcome !== 'missed',
+      )
+    : undefined
+  const completedForToday = summary.session
+    ? CompletedSessionRepository.loadAll().find((c) => c.plannedSessionId === summary.session!.id)
+    : undefined
 
   const handleReadinessSelect = (level: ReadinessLevel) => {
     if (!summary.session) return
@@ -120,6 +142,7 @@ export function TodayPage() {
       <h1 className="sr-only">Aujourd'hui</h1>
       <RaceCountdown raceLabel={summary.raceLabel} daysUntilRace={summary.daysUntilRace} />
       <NutritionSetupPrompt />
+      <CurrentMealCard date={today} session={summary.session} nextSession={summary.nextSession} />
 
       {pendingRest && week && availability ? (
         <RestDayMovePrompt
@@ -130,6 +153,34 @@ export function TodayPage() {
           planEndDateExclusive={raceGoal.raceDate}
           onResolved={handleMoveResolved}
         />
+      ) : summary.session && feedbackForToday ? (
+        <>
+          <Card variant="raised" className="flex flex-col items-center gap-1 py-8 text-center">
+            <h2 className="text-lg font-semibold">Bravo, séance terminée !</h2>
+            <p className="text-sm text-text-muted">{summary.session.title}</p>
+          </Card>
+
+          <Card variant="muted" className="flex flex-col gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-text-muted">Durée réelle</span>
+              <span>{completedForToday?.actualDurationMin ?? summary.session.estimatedDurationMin} min</span>
+            </div>
+            {feedbackForToday.rpe !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-text-muted">RPE ressenti</span>
+                <span>{feedbackForToday.rpe}/10</span>
+              </div>
+            )}
+            {feedbackForToday.perceivedDifficulty && (
+              <div className="flex justify-between">
+                <span className="text-text-muted">Ressenti</span>
+                <span>{DIFFICULTY_LABELS[feedbackForToday.perceivedDifficulty]}</span>
+              </div>
+            )}
+          </Card>
+
+          <CoachInsight message={summary.explanation} />
+        </>
       ) : summary.session ? (
         <>
           <Card variant="raised">
