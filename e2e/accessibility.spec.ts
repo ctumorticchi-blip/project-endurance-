@@ -57,6 +57,24 @@ async function completeOnboarding(page: Page) {
   await page.waitForSelector('nav[aria-label="Navigation principale"]')
 }
 
+/** Same as completeOnboarding, but declares FTP + sex + weight at the
+ * metrics step — the combination that unlocks the Profile page's
+ * power-to-weight card and the Nutrition page's weight-calculated ranges. */
+async function completeOnboardingWithBiometrics(page: Page) {
+  await dismissWelcome(page)
+  await fillRaceGoalStep(page)
+  await fillExperienceStep(page)
+  await page.getByRole('button', { name: 'Continuer' }).click() // equipment
+  await page.getByLabel('FTP vélo (watts)').fill('250')
+  await page.getByRole('radio', { name: 'Femme' }).click()
+  await page.getByLabel('Poids (kg)').fill('62')
+  await page.getByLabel('Taille (cm)').fill('168')
+  await page.getByRole('button', { name: 'Continuer' }).click()
+  await fillAvailabilityStep(page)
+  await page.getByRole('button', { name: 'Créer mon programme' }).click()
+  await page.waitForSelector('nav[aria-label="Navigation principale"]')
+}
+
 test.describe('onboarding', () => {
   test('welcome screen', async ({ page }) => {
     await page.goto('/')
@@ -91,6 +109,18 @@ test.describe('onboarding', () => {
     await fillExperienceStep(page)
     await page.getByRole('button', { name: 'Continuer' }).click()
     await page.waitForSelector('text=Tes données connues')
+    await scanAxe(page)
+  })
+
+  test('metrics step with biometrics filled in', async ({ page }) => {
+    await dismissWelcome(page)
+    await fillRaceGoalStep(page)
+    await fillExperienceStep(page)
+    await page.getByRole('button', { name: 'Continuer' }).click()
+    await page.waitForSelector('text=Données personnelles')
+    await page.getByRole('radio', { name: 'Femme' }).click()
+    await page.getByLabel('Taille (cm)').fill('168')
+    await page.getByLabel('Poids (kg)').fill('62')
     await scanAxe(page)
   })
 
@@ -261,6 +291,15 @@ test.describe('nutrition', () => {
     await page.waitForSelector('text=Stratégie jour de course')
     await scanAxe(page)
   })
+
+  test('mentions weight-calculated guidance once a body weight is declared', async ({ page }) => {
+    await completeOnboardingWithBiometrics(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Stratégie jour de course')
+    const text = await page.locator('body').innerText()
+    expect(text).toMatch(/calculés à partir de ton poids/)
+    await scanAxe(page)
+  })
 })
 
 test.describe('profile', () => {
@@ -276,6 +315,17 @@ test.describe('profile', () => {
     await page.getByRole('link', { name: 'Profil' }).click()
     await page.waitForSelector('text=Ton profil')
     await page.getByRole('button', { name: 'Voir le détail des zones' }).click()
+    await scanAxe(page)
+  })
+
+  test('shows the power-to-weight card once FTP and weight are both known', async ({ page }) => {
+    await completeOnboardingWithBiometrics(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+    await page.waitForSelector('text=Puissance relative')
+    const text = await page.locator('body').innerText()
+    expect(text).toMatch(/W\/kg/)
+    expect(text).toMatch(/Confirmé|Avancé|Intermédiaire|Occasionnel|Débutant|Élite/)
     await scanAxe(page)
   })
 })

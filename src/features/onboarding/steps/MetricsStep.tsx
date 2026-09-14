@@ -1,8 +1,16 @@
 import { useState } from 'react'
+import type { BiologicalSex } from '@/core/athlete/AthleteProfile'
+import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { MinSecField } from '@/shared/components/MinSecField'
 import type { OnboardingDraft } from '../onboardingState'
+
+const SEX_CHOICES: { value: BiologicalSex; label: string }[] = [
+  { value: 'female', label: 'Femme' },
+  { value: 'male', label: 'Homme' },
+  { value: 'unspecified', label: 'Préfère ne pas préciser' },
+]
 
 interface MetricsStepProps {
   draft: OnboardingDraft
@@ -109,6 +117,37 @@ export function MetricsStep({ draft, onChange }: MetricsStepProps) {
         onSecondsChange={(v) => updatePace(paceMin, v)}
         hint="L'allure de course que tu peux tenir pendant environ une heure, par km."
       />
+
+      <div className="mt-2 border-t border-border pt-5">
+        <h2 className="text-sm font-semibold">Données personnelles</h2>
+        <p className="mt-1 text-xs text-text-muted">
+          Optionnel, et jamais utilisé pour un diagnostic : ton poids sert à calculer des repères
+          nutritionnels (glucides/hydratation par heure) adaptés à toi plutôt que des fourchettes
+          génériques, et ta puissance relative (W/kg) si tu renseignes ta FTP vélo.
+        </p>
+      </div>
+
+      <ChoiceGroup
+        legend="Sexe"
+        name="sex"
+        choices={SEX_CHOICES}
+        value={draft.sex}
+        onChange={(value) => onChange({ sex: value })}
+      />
+
+      {numberField(
+        'Taille (cm)',
+        'Utilisée pour ton profil — aucune séance ni recommandation n\'en dépend pour le moment.',
+        draft.heightCm,
+        (v) => onChange({ heightCm: v }),
+      )}
+
+      {numberField(
+        'Poids (kg)',
+        'Sert à calculer tes repères nutritionnels et ta puissance relative (W/kg) si ta FTP est connue.',
+        draft.weightKg,
+        (v) => onChange({ weightKg: v }),
+      )}
     </div>
   )
 }

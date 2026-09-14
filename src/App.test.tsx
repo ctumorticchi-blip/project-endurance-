@@ -16,6 +16,7 @@ function completeOnboardingInStorage() {
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
       equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
       knownMetrics: {},
+      biometrics: {},
     }),
   )
   RaceGoalRepository.save(createRaceGoal({ distance: 'sprint', raceDate: '2026-12-01' }))

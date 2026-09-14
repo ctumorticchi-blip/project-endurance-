@@ -1,4 +1,4 @@
-import type { Equipment, KnownMetrics } from '@/core/athlete/AthleteProfile'
+import type { BiologicalSex, Equipment, KnownMetrics } from '@/core/athlete/AthleteProfile'
 import type { AvailabilityException, WeeklyPattern } from '@/core/availability/Availability'
 import { createEmptyWeeklyPattern, MIN_REST_DAYS_PER_WEEK } from '@/core/availability/Availability'
 import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
@@ -24,6 +24,9 @@ export interface OnboardingDraft {
 
   equipment: Equipment
   knownMetrics: KnownMetrics
+  sex?: BiologicalSex
+  heightCm?: number
+  weightKg?: number
 
   weeklyPattern: WeeklyPattern
   exceptions: AvailabilityException[]

@@ -29,6 +29,31 @@ Toutes les données avancées (puissance, cadence, SWOLF...) restent
 **facultatives** — M0 fonctionne intégralement sans montre ni capteur
 connecté.
 
+## Biométrie (`AthleteProfile.biometrics`)
+
+Sexe, taille, poids — demandés une fois à l'onboarding, **toujours
+facultatifs** (brief §20), jamais utilisés pour un diagnostic ou un
+jugement de composition corporelle. Deux usages concrets seulement,
+chacun documenté et décomposable :
+
+- **Nutrition par heure d'effort** (`config/nutritionGuidance.ts`) : le
+  poids convertit les fourchettes génériques de glucides/hydratation
+  (largement citées en nutrition sportive d'endurance, en g ou ml par kg
+  et par heure) en une fourchette calculée pour l'athlète, plutôt qu'une
+  fourchette uniquement basée sur la durée. Sans poids déclaré, le
+  générateur retombe sur la fourchette générique d'origine.
+- **Puissance relative** (`engine/calibration/powerToWeight.ts`) : FTP ÷
+  poids = W/kg, affiché tel quel. Si le sexe est déclaré (homme/femme), un
+  intitulé de catégorie approximatif (tableau public de référence de
+  l'entraînement à la puissance, différent par sexe) est ajouté à côté du
+  chiffre brut — jamais à la place. « Non précisé » n'affiche aucune
+  catégorie plutôt que d'en deviner une.
+
+La taille est conservée dans le profil mais ne pilote aucun calcul pour
+le moment — pas de calcul d'IMC ni de catégorisation liée au poids/à la
+taille : ce type de score n'a pas d'usage défendable pour l'entraînement
+et risquerait de contredire la règle « pas de diagnostic » ci-dessus.
+
 ## Calibration
 
 Ordre de confiance : **donnée connue déclarée > estimation prudente > test

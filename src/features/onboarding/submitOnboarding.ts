@@ -36,6 +36,7 @@ export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string
     recentWeeklyVolumeHours: draft.recentWeeklyVolumeHours,
     equipment: draft.equipment,
     knownMetrics: draft.knownMetrics,
+    biometrics: { sex: draft.sex, heightCm: draft.heightCm, weightKg: draft.weightKg },
     constraintsNote: draft.constraintsNote,
   })
 

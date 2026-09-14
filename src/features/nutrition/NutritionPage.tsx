@@ -1,9 +1,10 @@
 import {
   getFuelingGuidance,
-  NUTRITION_DISCLAIMER,
+  getNutritionDisclaimer,
   NUTRITION_PRINCIPLES,
   RACE_DAY_GUIDANCE,
 } from '@/config/nutritionGuidance'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
@@ -14,14 +15,16 @@ import { toISODate } from '@/shared/utils/date'
 export function NutritionPage() {
   const plan = TrainingPlanRepository.load()
   const raceGoal = RaceGoalRepository.load()
+  const profile = AthleteProfileRepository.load()
 
   if (!plan || !raceGoal) {
     return <PlaceholderPage title="Nutrition" description="Ton programme n'a pas encore été généré." />
   }
 
+  const weightKg = profile?.biometrics.weightKg
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
-  const fueling = getFuelingGuidance(summary.session)
+  const fueling = getFuelingGuidance(summary.session, weightKg)
   const raceDay = RACE_DAY_GUIDANCE[raceGoal.distance]
 
   return (
@@ -70,7 +73,7 @@ export function NutritionPage() {
         </Card>
       </section>
 
-      <p className="text-xs text-text-faint">{NUTRITION_DISCLAIMER}</p>
+      <p className="text-xs text-text-faint">{getNutritionDisclaimer(Boolean(weightKg))}</p>
     </div>
   )
 }

@@ -26,6 +26,21 @@ export interface Equipment {
   hasHomeTrainer: boolean
 }
 
+/** Self-declared, used only where it has an actual, defensible effect on a
+ * calculation (currently: which population-average reference band a
+ * power-to-weight ratio falls in — see `engine/calibration/powerToWeight.ts`).
+ * `unspecified` skips any sex-specific adjustment rather than guessing. */
+export type BiologicalSex = 'female' | 'male' | 'unspecified'
+
+/** All optional (brief §20): asked once at onboarding, never required to
+ * get a plan. Used for exactly two things — see docs/metrics.md — never
+ * for a health/BMI judgment or any diagnosis. */
+export interface Biometrics {
+  sex?: BiologicalSex
+  heightCm?: number
+  weightKg?: number
+}
+
 export interface AthleteProfile {
   id: string
   createdAt: string
@@ -36,6 +51,7 @@ export interface AthleteProfile {
   recentWeeklyVolumeHours?: number
   equipment: Equipment
   knownMetrics: KnownMetrics
+  biometrics: Biometrics
   /** Free-text habitual constraints the engine cannot infer structurally (brief §20). */
   constraintsNote?: string
 }

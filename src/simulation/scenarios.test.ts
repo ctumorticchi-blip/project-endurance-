@@ -68,6 +68,7 @@ describe('Scenario A — Triathlon Sprint, intermediate, ~12 weeks, 5 sessions/w
       disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
       equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
       knownMetrics: {},
+      biometrics: {},
     })
 
     const { plan } = generateTrainingPlan({ raceGoal, availability, today })

@@ -8,18 +8,42 @@ export interface FuelingGuidance {
   after: string
 }
 
+/** Widely-cited general endurance-nutrition ranges (g of carbs / ml of
+ * fluid per kg of body weight per hour) — the same bounds sports-nutrition
+ * guidelines give per kilogram, just applied to the athlete's own declared
+ * weight instead of shown as a duration-only range. Still a range, still
+ * "to adjust for how much you sweat" — a calculation from a declared
+ * number is honest; anything narrower would be false precision. */
+const CARBS_PER_KG_PER_HOUR: [number, number] = [0.6, 1.0]
+const FLUID_ML_PER_KG_PER_HOUR: [number, number] = [6, 8]
+
+function longSessionDuringNote(discipline: Discipline, weightKg: number | undefined): string {
+  if (discipline === 'swim') {
+    return "En natation, difficile de s'alimenter pendant l'effort : mise plutôt sur un bon apport avant et juste après."
+  }
+  if (!weightKg) {
+    return '30 à 60 g de glucides par heure (gels, barres, boisson énergétique) et 500 à 750 ml d’eau par heure, à ajuster selon ta transpiration.'
+  }
+  const [carbsLow, carbsHigh] = CARBS_PER_KG_PER_HOUR
+  const [fluidLow, fluidHigh] = FLUID_ML_PER_KG_PER_HOUR
+  const carbsRange = `${Math.round(weightKg * carbsLow)} à ${Math.round(weightKg * carbsHigh)} g`
+  const fluidRange = `${Math.round(weightKg * fluidLow)} à ${Math.round(weightKg * fluidHigh)} ml`
+  return `${carbsRange} de glucides par heure (gels, barres, boisson énergétique) et ${fluidRange} d’eau par heure — calculé à partir de ton poids (${weightKg} kg), à ajuster selon ta transpiration.`
+}
+
 /**
  * General endurance-sports fueling guidance, bucketed by session duration
  * — the dominant factor — with a per-discipline note only where it
  * actually changes the advice (swim: fueling during the effort is
- * impractical). The ranges here (e.g. ~30-60g carbs/hour beyond 90min)
- * are widely-cited public sports-nutrition guidance, not a personalized
- * prescription: the app has no body-weight, composition, or dietary data
- * to compute one from (brief: no false precision — a range grounded in
- * duration is honest, a fabricated per-kg number would not be).
+ * impractical). When a body weight is declared, the long-session carb/
+ * fluid range is computed from it (still a range, still widely-cited
+ * public guidance per kg — never a fabricated single number); otherwise
+ * it falls back to the same duration-only range as before (brief: no
+ * false precision).
  */
 export function getFuelingGuidance(
   session: { discipline: Discipline; estimatedDurationMin: number } | undefined,
+  weightKg?: number,
 ): FuelingGuidance {
   if (!session) {
     return {
@@ -53,15 +77,10 @@ export function getFuelingGuidance(
     }
   }
 
-  const duringNote =
-    discipline === 'swim'
-      ? "En natation, difficile de s'alimenter pendant l'effort : mise plutôt sur un bon apport avant et juste après."
-      : '30 à 60 g de glucides par heure (gels, barres, boisson énergétique) et 500 à 750 ml d’eau par heure, à ajuster selon ta transpiration.'
-
   return {
     title: `Séance longue (${minutes} min)`,
     before: "Repas riche en glucides, pauvre en graisses et en fibres, 2 à 3h avant l'effort pour éviter les troubles digestifs.",
-    during: duringNote,
+    during: longSessionDuringNote(discipline, weightKg),
     after:
       'Dans les 30 à 60 minutes qui suivent : glucides + protéines (environ 3 à 4 pour 1) — la fenêtre la plus efficace pour lancer la récupération.',
   }
@@ -104,5 +123,13 @@ export const NUTRITION_PRINCIPLES: { title: string; body: string }[] = [
   },
 ]
 
-export const NUTRITION_DISCLAIMER =
-  "Ces repères sont des principes généraux de nutrition sportive d'endurance, pas un plan personnalisé : l'app ne connaît ni ton poids, ni tes objectifs de composition corporelle, ni d'éventuelles restrictions alimentaires. Pour un accompagnement adapté à ta situation, consulte un·e diététicien·ne du sport."
+/** Kept as a function rather than a constant because the honest disclaimer
+ * changes once a body weight is declared: the carb/fluid range is then a
+ * real calculation from that number, not a duration-only guess — but it's
+ * still general sports-nutrition guidance, not a full personalized plan. */
+export function getNutritionDisclaimer(weightKnown: boolean): string {
+  const weightClause = weightKnown
+    ? 'les repères pendant l’effort ci-dessus sont calculés à partir de ton poids déclaré, pas une fourchette générique'
+    : "l'app ne connaît pas ton poids, donc les repères pendant l'effort restent des fourchettes générales"
+  return `Ces repères sont des principes généraux de nutrition sportive d'endurance, pas un plan personnalisé complet : ${weightClause}, et l'app ne connaît ni tes objectifs de composition corporelle ni d'éventuelles restrictions alimentaires. Pour un accompagnement adapté à ta situation, consulte un·e diététicien·ne du sport.`
+}

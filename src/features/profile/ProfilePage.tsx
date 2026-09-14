@@ -9,6 +9,7 @@ import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackReposit
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
+import { calculatePowerToWeight } from '@/engine/calibration/powerToWeight'
 import type { Zone } from '@/engine/calibration/zones'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
@@ -19,6 +20,12 @@ const LEVEL_LABELS: Record<string, string> = {
   beginner: 'Débutant',
   intermediate: 'Intermédiaire',
   advanced: 'Avancé',
+}
+
+const SEX_LABELS: Record<string, string> = {
+  female: 'Femme',
+  male: 'Homme',
+  unspecified: 'Non précisé',
 }
 
 function ZoneTable({
@@ -79,6 +86,14 @@ export function ProfilePage() {
 
   const zones = calculateAthleteZones(profile.knownMetrics)
   const metrics = profile.knownMetrics
+  const { sex, heightCm, weightKg } = profile.biometrics
+  const powerToWeight = calculatePowerToWeight(metrics.ftpWatts, weightKg, sex)
+
+  const biometricsParts = [
+    sex && SEX_LABELS[sex] ? SEX_LABELS[sex] : undefined,
+    heightCm ? `${heightCm} cm` : undefined,
+    weightKg ? `${weightKg} kg` : undefined,
+  ].filter((part): part is string => Boolean(part))
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
@@ -90,7 +105,28 @@ export function ProfilePage() {
           {LEVEL_LABELS[profile.disciplineLevels.bike]} · Course{' '}
           {LEVEL_LABELS[profile.disciplineLevels.run]}
         </p>
+        {biometricsParts.length > 0 && (
+          <p className="mt-1 text-sm text-text-muted">{biometricsParts.join(' · ')}</p>
+        )}
       </div>
+
+      {powerToWeight && (
+        <Card variant="raised" className="flex flex-col gap-1">
+          <h2 className="text-sm font-semibold">Puissance relative</h2>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-semibold">{powerToWeight.wattsPerKg} W/kg</span>
+            {powerToWeight.category && (
+              <span className="text-sm text-text-muted">{powerToWeight.category}</span>
+            )}
+          </div>
+          <p className="text-xs text-text-muted">
+            Ta FTP ({metrics.ftpWatts} W) rapportée à ton poids ({weightKg} kg).
+            {powerToWeight.category
+              ? " La catégorie est une référence approximative issue de tableaux publics de l'entraînement à la puissance, pas un jugement individuel — deux profils dans la même catégorie peuvent courir très différemment."
+              : ' Une catégorie de référence approximative s’affiche ici quand ton sexe est renseigné.'}
+          </p>
+        </Card>
+      )}
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold">Données de calibration</h2>
