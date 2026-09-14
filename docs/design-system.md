@@ -19,6 +19,16 @@ primaire (`#3DDC97`) et un bleu accent (`#4EA1FF`), plus warning/danger.
 Texte en trois intensités (`text` / `text-muted` / `text-faint`) — jamais
 d'information critique portée uniquement par la couleur.
 
+**Règle de contraste** : chaque `Badge` teinté (`primary`/`accent`/
+`warning`/`danger`) mélange sa couleur à 15 % au-dessus du fond de page
+très sombre — c'est ce qui garantit le ratio WCAG AA (4.5:1) pour le texte
+de même teinte. Ne jamais imbriquer un `Badge` teinté à l'intérieur d'un
+autre conteneur déjà teinté de la même couleur (ex. une bannière
+`bg-accent/10`) : les deux calques translucides s'additionnent, éclaircissent
+le fond composite, et font échouer le contraste (mesuré 3.97:1 dans ce cas
+précis — trouvé et corrigé via un scan axe-core réel, pas en lecture de
+code). Dans ce contexte, utiliser `tone="neutral"` pour le badge imbriqué.
+
 Typographie : une pile de polices système déclarée volontairement
 (`Inter, ui-sans-serif, system-ui, ...`) — pas de webfont chargée à
 distance. Aucune dépendance réseau, aucun FOUT, dégradation propre si

@@ -15,6 +15,8 @@ import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
+import { CoachInsight } from './CoachInsight'
+import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
@@ -86,18 +88,16 @@ export function TodayPage() {
     setAdaptation(result)
   }
 
+  const activeAdaptation = adaptation && adaptation.type !== 'KEEP' ? adaptation : undefined
+
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
-      <div>
-        <p className="text-xs font-medium tracking-wide text-text-muted">
-          TRIATHLON {summary.raceLabel} · J-{summary.daysUntilRace}
-        </p>
-        <h1 className="text-lg font-semibold">Aujourd'hui</h1>
-      </div>
+      <h1 className="sr-only">Aujourd'hui</h1>
+      <RaceCountdown raceLabel={summary.raceLabel} daysUntilRace={summary.daysUntilRace} />
 
       {summary.session ? (
         <>
-          <Card>
+          <Card variant="raised">
             <div className="mb-1 flex items-center justify-between">
               <p className="text-xs font-medium text-text-muted">
                 {DISCIPLINE_LABELS[summary.session.discipline]}
@@ -106,20 +106,28 @@ export function TodayPage() {
                 {PRIORITY_LABELS[summary.session.priority]}
               </Badge>
             </div>
-            <h2 className="text-base font-semibold">{summary.session.title}</h2>
+            <h2 className="text-lg font-semibold">{summary.session.title}</h2>
             <p className="mt-1 text-sm text-text-muted">
               {summary.session.estimatedDurationMin} min · Charge prévue{' '}
               {Math.round(summary.session.estimatedDurationMin)}
             </p>
           </Card>
 
+          <ReadinessCheckIn
+            date={today}
+            plannedSessionId={summary.session.id}
+            onSelect={handleReadinessSelect}
+          />
+
+          <CoachInsight message={summary.explanation} adaptation={activeAdaptation} />
+
           <section>
-            <h3 className="mb-1 text-sm font-semibold">Objectif</h3>
+            <h2 className="mb-1 text-sm font-semibold">Objectif</h2>
             <p className="text-sm text-text-muted">{summary.session.objective}</p>
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold">Structure</h3>
+            <h2 className="mb-2 text-sm font-semibold">Structure</h2>
             <ol className="flex flex-col gap-2">
               {summary.session.blocks.map((block) => (
                 <Card key={block.id} as="li" variant="muted" className="text-sm">
@@ -135,25 +143,6 @@ export function TodayPage() {
             </ol>
           </section>
 
-          <section>
-            <h3 className="mb-1 text-sm font-semibold">Pourquoi cette séance ?</h3>
-            <Card variant="muted" className="text-sm text-text-muted">
-              {summary.explanation}
-            </Card>
-          </section>
-
-          <ReadinessCheckIn
-            date={today}
-            plannedSessionId={summary.session.id}
-            onSelect={handleReadinessSelect}
-          />
-
-          {adaptation && adaptation.type !== 'KEEP' && (
-            <p role="status" className="rounded-[var(--radius-sm)] bg-accent/10 px-3 py-2 text-sm text-accent">
-              {adaptation.explanation}
-            </p>
-          )}
-
           <AdjustAvailabilityToday date={today} onAdjust={handleAvailabilityAdjust} />
 
           <LinkButton to={`/session/${summary.session.id}`} className="w-full">
@@ -168,10 +157,10 @@ export function TodayPage() {
           </Link>
         </>
       ) : (
-        <Card>
-          <h2 className="text-base font-semibold">Jour de repos</h2>
-          <p className="mt-2 text-sm text-text-muted">{summary.explanation}</p>
-        </Card>
+        <>
+          <h2 className="text-lg font-semibold">Jour de repos</h2>
+          <CoachInsight message={summary.explanation} />
+        </>
       )}
     </div>
   )
