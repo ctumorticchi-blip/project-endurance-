@@ -29,6 +29,13 @@ le fond composite, et font échouer le contraste (mesuré 3.97:1 dans ce cas
 précis — trouvé et corrigé via un scan axe-core réel, pas en lecture de
 code). Dans ce contexte, utiliser `tone="neutral"` pour le badge imbriqué.
 
+`text-faint` a été recalculé (`#5C6774` → `#868E98`) après un scan axe-core
+sur le Session Player : contre les quatre fonds de l'app (`background`,
+`surface`, `surface-muted`, `surface-raised`), l'ancienne valeur ne
+descendait jamais sous 2.74:1. La nouvelle valeur tient 4.5:1 (avec marge)
+sur les quatre à la fois — un token de texte doit rester lisible partout où
+il est utilisé, pas seulement dans le contexte où il a été choisi au départ.
+
 Typographie : une pile de polices système déclarée volontairement
 (`Inter, ui-sans-serif, system-ui, ...`) — pas de webfont chargée à
 distance. Aucune dépendance réseau, aucun FOUT, dégradation propre si
@@ -58,6 +65,10 @@ aux grands conteneurs). Un seul jeu de valeurs utilisé partout — plus de
   d'imbriquer un lien dans un bouton (HTML invalide).
 - **ChoiceGroup** — sélection à choix unique accessible, boutons radio
   natifs (`fieldset`/`legend`), zéro ARIA reconstruite à la main.
+- **ProgressBar** — barre de progression déterminée (`role="progressbar"` +
+  `aria-value*`), sans libellé visible : le `label` passé en prop porte le
+  nom accessible. Utilisée pour la progression d'une séance (étapes) et
+  celle d'une étape en cours (décompte) dans le Session Player.
 - `inputStyles.ts` (`INPUT_CLASSES`) — la classe partagée par tous les
   champs texte/nombre/date/textarea de l'app.
 

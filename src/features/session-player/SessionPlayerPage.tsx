@@ -4,6 +4,7 @@ import { findSessionById } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { Button } from '@/shared/components/Button'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { ProgressBar } from '@/shared/components/ProgressBar'
 import { flattenSessionSteps } from './flattenSessionSteps'
 import { StepPlayer } from './StepPlayer'
 
@@ -26,6 +27,7 @@ export function SessionPlayerPage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [finished, setFinished] = useState(false)
   const currentStep = steps[stepIndex]
+  const nextStep = steps[stepIndex + 1]
 
   const goToNextStep = () => {
     if (stepIndex + 1 >= steps.length) {
@@ -57,17 +59,23 @@ export function SessionPlayerPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col px-4 py-6">
-      <div>
-        <p className="text-xs font-medium tracking-wide text-text-muted">
-          {DISCIPLINE_LABELS[session.discipline]} · {session.title}
-        </p>
-        <p className="text-xs text-text-muted">
-          Étape {stepIndex + 1} / {steps.length}
-        </p>
+    <div className="flex min-h-full flex-col gap-4 px-4 py-6">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium tracking-wide text-text-muted">
+            {DISCIPLINE_LABELS[session.discipline]} · {session.title}
+          </p>
+          <p className="text-xs tabular-nums text-text-muted">
+            {stepIndex + 1} / {steps.length}
+          </p>
+        </div>
+        <ProgressBar
+          value={(stepIndex / steps.length) * 100}
+          label={`Progression de la séance : étape ${stepIndex + 1} sur ${steps.length}`}
+        />
       </div>
 
-      <StepPlayer key={currentStep.key} step={currentStep} onComplete={goToNextStep} />
+      <StepPlayer key={currentStep.key} step={currentStep} nextStep={nextStep} onComplete={goToNextStep} />
     </div>
   )
 }

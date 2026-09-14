@@ -25,7 +25,7 @@ export const brand = {
     accent: '#4EA1FF',
     text: '#F4F7FA',
     textMuted: '#9AA7B4',
-    textFaint: '#5C6774',
+    textFaint: '#868E98',
     border: '#26303C',
     borderStrong: '#37455A',
     warning: '#F2B84B',
