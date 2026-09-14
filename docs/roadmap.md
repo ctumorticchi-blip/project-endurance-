@@ -100,6 +100,16 @@ Athlete Model / Coach Engine / Metrics Engine / Storage / Account /
 Analytics / Connected Data, en ne dupliquant que la logique spécifique au
 sport.
 
+**M6 — Running : livré.** `RaceGoal`/`AthleteProfile` sont des unions
+discriminées sur `sport` ; `sports/running/` a son propre catalogue de
+séances, son propre générateur de plan (périodisation spécifique par
+distance 5K/10K/semi/marathon) et son propre onboarding, en réutilisant
+directement le moteur d'adaptation, le modèle de séance/bloc et le moteur
+de charge existants — voir `docs/running-engine.md` (architecture) et
+`docs/running-coaching-methodology.md` (méthodologies sources). Cycling et
+Swimming (M7/M8) suivront le même schéma une fois Running validé en
+conditions réelles.
+
 ## M10 — Endurance Platform
 
 Un utilisateur peut avoir successivement un objectif running, puis

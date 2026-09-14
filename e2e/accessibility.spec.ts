@@ -47,6 +47,31 @@ async function fillAvailabilityStep(page: Page) {
   await page.getByRole('button', { name: 'Continuer' }).click()
 }
 
+async function fillRunningRaceGoalStep(page: Page) {
+  await page.getByRole('radio', { name: 'Course à pied' }).click()
+  await page.locator('input[value="10k"]').click()
+  const raceDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+  await page.fill('input[type=date]', raceDate.toISOString().slice(0, 10))
+  await page.getByRole('button', { name: 'Continuer' }).click()
+}
+
+async function fillRunningExperienceStep(page: Page) {
+  for (const radio of await page.getByRole('radio', { name: 'Intermédiaire' }).all()) await radio.click()
+  await page.getByRole('radio', { name: /déjà couru quelques courses/ }).click()
+  await page.getByRole('button', { name: 'Continuer' }).click()
+}
+
+async function completeRunningOnboarding(page: Page) {
+  await dismissWelcome(page)
+  await fillRunningRaceGoalStep(page)
+  await fillRunningExperienceStep(page)
+  await page.getByRole('button', { name: 'Continuer' }).click() // equipment (informational, no fields)
+  await page.getByRole('button', { name: 'Continuer' }).click() // metrics (optional)
+  await fillAvailabilityStep(page)
+  await page.getByRole('button', { name: 'Créer mon programme' }).click()
+  await page.waitForSelector('nav[aria-label="Navigation principale"]')
+}
+
 async function completeOnboarding(page: Page) {
   await dismissWelcome(page)
   await fillRaceGoalStep(page)
@@ -655,6 +680,107 @@ test.describe('profile', () => {
 
     await page.getByRole('link', { name: 'Retour au profil' }).click()
     await page.waitForSelector('text=Ton profil')
+  })
+})
+
+test.describe('running (multisport rollout)', () => {
+  test('race goal step offers running distances once the sport toggle is switched', async ({ page }) => {
+    await dismissWelcome(page)
+    await page.getByRole('radio', { name: 'Course à pied' }).click()
+    await expect(page.locator('input[value="10k"]')).toBeVisible()
+    await expect(page.locator('input[value=sprint]')).toHaveCount(0)
+    await scanAxe(page)
+  })
+
+  test('experience step asks only running-specific questions, no swim/bike', async ({ page }) => {
+    await dismissWelcome(page)
+    await fillRunningRaceGoalStep(page)
+    await page.waitForSelector('text=Ton expérience')
+    expect(await page.getByRole('radio', { name: 'Intermédiaire' }).count()).toBe(2)
+    await expect(page.getByText('🏊 Niveau natation')).toHaveCount(0)
+    await expect(page.getByText('🚴 Niveau vélo')).toHaveCount(0)
+    await scanAxe(page)
+  })
+
+  test('equipment step shows an informational message instead of swim/bike checkboxes', async ({ page }) => {
+    await dismissWelcome(page)
+    await fillRunningRaceGoalStep(page)
+    await fillRunningExperienceStep(page)
+    await page.waitForSelector('text=ne demande pas de matériel spécifique')
+    await scanAxe(page)
+  })
+
+  test('availability step has no pool-access checkbox for a running plan', async ({ page }) => {
+    await dismissWelcome(page)
+    await fillRunningRaceGoalStep(page)
+    await fillRunningExperienceStep(page)
+    await page.getByRole('button', { name: 'Continuer' }).click() // equipment
+    await page.getByRole('button', { name: 'Continuer' }).click() // metrics
+    await page.waitForSelector('text=Ta semaine type')
+    await expect(page.getByText('Piscine accessible ce jour-là')).toHaveCount(0)
+    await scanAxe(page)
+  })
+
+  test('full happy path generates a running-only plan visible on Today', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    await scanAxe(page)
+
+    // No swim/bike session should ever appear for a running-only plan.
+    await expect(page.getByText('Vélo', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Natation', { exact: true })).toHaveCount(0)
+  })
+
+  test('Today offers only "Convertir en repos", no discipline-swap ChoiceGroup', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    const swapButton = page.getByRole('button', { name: 'Convertir en repos' })
+    if (await swapButton.count()) {
+      await swapButton.click()
+      await expect(page.getByRole('radio')).toHaveCount(0)
+      await expect(page.getByText('Convertir cette séance en jour de repos ?')).toBeVisible()
+      await scanAxe(page)
+    }
+  })
+
+  test('Plan screen shows only running sessions, grounded in distance-specific periodization', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    await page.getByRole('link', { name: 'Programme' }).click()
+    await page.waitForSelector('text=Ton programme')
+    await expect(page.getByText('10 km')).toBeVisible()
+    await scanAxe(page)
+  })
+
+  test('Profile hides the FTP/CSS calibration rows for a runner', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+    await expect(page.getByText('FTP vélo')).toHaveCount(0)
+    await expect(page.getByText('CSS natation')).toHaveCount(0)
+    await expect(page.getByText('Allure seuil course')).toBeVisible()
+    await scanAxe(page)
+  })
+
+  test('editing availability regenerates a running plan (no longer a "coming soon" placeholder)', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+    await page.getByRole('link', { name: 'Modifier mes disponibilités' }).click()
+    await page.waitForSelector('text=Modifier tes disponibilités')
+    await scanAxe(page)
+
+    await page.getByRole('checkbox', { name: 'Repos le Dimanche' }).click()
+    await page.getByRole('checkbox', { name: 'Repos le Mercredi' }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Disponibilités mises à jour')
+    await scanAxe(page)
+  })
+
+  test('Nutrition shows running-specific race-day fueling guidance', async ({ page }) => {
+    await completeRunningOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Stratégie jour de course')
+    const text = await page.locator('body').innerText()
+    expect(text).toMatch(/glucides par heure/)
+    await scanAxe(page)
   })
 })
 
