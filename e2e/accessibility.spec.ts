@@ -254,6 +254,15 @@ test.describe('progress', () => {
   })
 })
 
+test.describe('nutrition', () => {
+  test('shows session-tied guidance and race-day strategy', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Stratégie jour de course')
+    await scanAxe(page)
+  })
+})
+
 test.describe('profile', () => {
   test('summary', async ({ page }) => {
     await completeOnboarding(page)

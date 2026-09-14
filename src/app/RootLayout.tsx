@@ -4,6 +4,7 @@ import { brand } from '@/config/brand'
 const NAV_ITEMS = [
   { to: '/today', label: 'Aujourd’hui' },
   { to: '/plan', label: 'Programme' },
+  { to: '/nutrition', label: 'Nutrition' },
   { to: '/progress', label: 'Progrès' },
   { to: '/profile', label: 'Profil' },
 ] as const

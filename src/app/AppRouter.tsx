@@ -5,6 +5,7 @@ import { ThresholdPaceTestPage } from '@/features/calibration/ThresholdPaceTestP
 import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage'
 import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { GlossaryPage } from '@/features/glossary/GlossaryPage'
+import { NutritionPage } from '@/features/nutrition/NutritionPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { DayDetailPage } from '@/features/plan/DayDetailPage'
 import { PlanPage } from '@/features/plan/PlanPage'
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
           { path: 'today', element: <TodayPage /> },
           { path: 'plan', element: <PlanPage /> },
           { path: 'day/:date', element: <DayDetailPage /> },
+          { path: 'nutrition', element: <NutritionPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'profile/tests/ftp', element: <FtpTestPage /> },
