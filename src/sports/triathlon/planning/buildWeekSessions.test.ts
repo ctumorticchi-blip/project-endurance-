@@ -103,6 +103,34 @@ describe('buildWeekSessions', () => {
       const sessions = build(availability)
       expect(sessions.some((s) => s.date === '2026-01-07')).toBe(false)
     })
+
+    it('schedules every non-rest day even when pool access forces the swim slot to skip ahead', () => {
+      // Regression: when the day naturally in line for the swim slot has no
+      // pool access, the swim slot grabs a *different* day out of order.
+      // That day used to just vanish from the schedule instead of freeing
+      // its own slot back up — leaving one extra, unrequested day empty
+      // even though only one rest day (Sunday) was ever asked for.
+      const pattern = availabilityAllDays(90).weeklyPattern
+      const availability: Availability = {
+        weeklyPattern: {
+          ...pattern,
+          monday: { available: true, minutes: 120, poolAccess: false },
+          tuesday: { available: true, minutes: 110, poolAccess: false },
+          wednesday: { available: true, minutes: 100, poolAccess: false },
+          thursday: { available: true, minutes: 95, poolAccess: true },
+          friday: { available: true, minutes: 90, poolAccess: false },
+          saturday: { available: true, minutes: 85, poolAccess: false },
+          sunday: { available: false, minutes: 0, poolAccess: false },
+        },
+        exceptions: [],
+        restDays: ['sunday'],
+      }
+      const sessions = build(availability)
+      const scheduledDates = new Set(sessions.map((s) => s.date))
+      // 2026-01-05 is a Monday, so this week's Sunday is 2026-01-11.
+      expect(scheduledDates.has('2026-01-11')).toBe(false)
+      expect(scheduledDates.size).toBe(6)
+    })
   })
 
   describe('progression across weeks of the same phase', () => {

@@ -93,33 +93,42 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   // so far this week — read before, and updated after, each slot decision,
   // so "occurrence 0" reliably means "this discipline's anchor session".
   const occurrenceByDiscipline = new Map<Discipline, number>()
-  const usedDates = new Set<string>()
+  // Days not yet claimed by a slot. A shared, mutable pool rather than a
+  // fixed slot-index -> day mapping: when the swim slot has to skip ahead
+  // to grab a pool day out of order, that day is properly removed here, so
+  // no later slot can collide with it — and the day it would otherwise have
+  // taken stays in the pool for a later slot instead of being silently
+  // dropped (which used to leave one day of the week with no session at
+  // all, looking like an extra, unrequested rest day).
+  const remainingDays = [...daysWithMinutes]
   const sessions: PlannedSession[] = []
 
   for (let slot = 0; slot < disciplines.length; slot++) {
     const discipline = disciplines[slot]!
     const priority = WEEKLY_SLOT_PRIORITIES[slot] ?? 'optional'
 
-    let day = daysWithMinutes[slot]
+    let day: (typeof daysWithMinutes)[number] | undefined
     let effectiveDiscipline: Discipline = discipline
     let effectiveOccurrence = occurrenceByDiscipline.get(discipline) ?? 0
 
-    if (discipline === 'swim' && (!day || !day.pool)) {
-      const poolDay = daysWithMinutes.find((d) => d.pool && !usedDates.has(d.date))
-      if (poolDay) {
-        day = poolDay
-      } else if (day && !usedDates.has(day.date)) {
+    if (discipline === 'swim') {
+      const poolIndex = remainingDays.findIndex((d) => d.pool)
+      if (poolIndex !== -1) {
+        day = remainingDays.splice(poolIndex, 1)[0]
+      } else if (remainingDays.length > 0) {
         // No pool access anywhere this week: don't waste this day's time —
         // give it to whichever of bike/run has had the fewer sessions so far.
+        day = remainingDays.shift()
         const bikeCount = occurrenceByDiscipline.get('bike') ?? 0
         const runCount = occurrenceByDiscipline.get('run') ?? 0
         effectiveDiscipline = runCount <= bikeCount ? 'run' : 'bike'
         effectiveOccurrence = runCount <= bikeCount ? runCount : bikeCount
       }
+    } else {
+      day = remainingDays.shift()
     }
 
-    if (!day || usedDates.has(day.date)) continue
-    usedDates.add(day.date)
+    if (!day) continue
     occurrenceByDiscipline.set(effectiveDiscipline, effectiveOccurrence + 1)
 
     const preferredType =
