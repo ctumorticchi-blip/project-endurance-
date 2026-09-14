@@ -17,8 +17,11 @@ const PHASE_RATIOS: [Exclude<TrainingPhaseName, 'taper' | 'race'>, number][] = [
 
 /** Largest-remainder apportionment: splits `total` whole weeks across
  * `ratios` while keeping every non-empty bucket the moment there is
- * enough runway (`total >= ratios.length`) to give each phase a week. */
-function splitProportional(total: number, ratios: number[]): number[] {
+ * enough runway (`total >= ratios.length`) to give each phase a week.
+ * Exported for reuse by other sports' phase allocation (e.g. running's
+ * own per-distance ratios) — the algorithm itself has no triathlon
+ * assumptions baked in. */
+export function splitProportional(total: number, ratios: number[]): number[] {
   const raw = ratios.map((r) => r * total)
   const result = raw.map(Math.floor)
   let remainder = total - result.reduce((a, b) => a + b, 0)
