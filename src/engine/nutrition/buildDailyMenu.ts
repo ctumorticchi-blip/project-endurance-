@@ -83,6 +83,18 @@ function hashSeed(input: string): number {
 }
 
 /**
+ * Every safety-compatible (diet + allergens) option for `slot` — the same
+ * pool `pickMeal` draws from before macro-focus/budget narrow it further,
+ * exposed so the athlete can see (and pick) any of them, not just the one
+ * the engine would default to. Always includes the deterministic pick
+ * itself, so "no other option" is visible as a list of one rather than an
+ * empty, confusing list.
+ */
+export function getMealAlternatives(slot: MealSlot, preferences: NutritionPreferences): MealTemplate[] {
+  return getMealsBySlot(slot).filter((m) => isSafe(m, preferences.dietType, preferences.restrictions))
+}
+
+/**
  * Picks one meal for `slot`. Safety (diet + allergies) is a hard filter
  * that never relaxes. `macroFocusPreference` comes next — it reflects an
  * actual physiological need tied to today's training (carb-loading before

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import type { MealSlot } from '@/config/nutrition/mealCatalog'
+import { MealOverrideRepository } from '@/core/nutrition/MealOverrideRepository'
 import { NutritionPreferencesRepository } from '@/core/nutrition/NutritionPreferencesRepository'
 import type { PlannedSession } from '@/core/training/PlannedSession'
+import { applyMealOverrides } from '@/engine/nutrition/applyMealOverrides'
 import { buildDailyMenu } from '@/engine/nutrition/buildDailyMenu'
 import { currentMealSlot } from '@/engine/nutrition/currentMealSlot'
 import { Card } from '@/shared/components/Card'
@@ -34,7 +36,7 @@ export function CurrentMealCard({ date, session, nextSession }: CurrentMealCardP
   const slot = currentMealSlot(new Date().getHours())
   if (!slot) return null
 
-  const menu = buildDailyMenu({ date, session, nextSession, preferences })
+  const menu = applyMealOverrides(buildDailyMenu({ date, session, nextSession, preferences }), MealOverrideRepository.loadAll())
   const entry = menu.entries.find((e) => e.slot === slot)
   if (!entry) return null
 

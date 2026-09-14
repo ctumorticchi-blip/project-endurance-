@@ -450,6 +450,67 @@ test.describe('nutrition', () => {
     const after = await page.locator('body').innerText()
     expect(after).toBe(before)
   })
+
+  test('the menu du jour section appears before the general principles', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Ton menu du jour')
+
+    const bodyText = await page.locator('body').innerText()
+    const menuIndex = bodyText.indexOf('Ton menu du jour')
+    const principlesIndex = bodyText.indexOf('Principes généraux')
+    expect(menuIndex).toBeGreaterThanOrEqual(0)
+    expect(principlesIndex).toBeGreaterThan(menuIndex)
+  })
+
+  test('switching to the week view shows a menu for every day of the current week', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Ton menu du jour')
+
+    await page.getByRole('button', { name: 'Semaine' }).click()
+    await page.waitForSelector('text=Ton menu de la semaine')
+    await expect(page.locator('h3')).toHaveCount(7)
+    await scanAxe(page)
+
+    await page.getByRole('button', { name: 'Jour' }).click()
+    await page.waitForSelector('text=Ton menu du jour')
+  })
+
+  test('swapping a meal for an alternative persists across reload', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Ton menu du jour')
+
+    const mealTitle = page.locator('li p.font-semibold').first()
+    const before = await mealTitle.textContent()
+
+    await page.getByRole('button', { name: 'Changer' }).first().click()
+    await page.waitForSelector('text=Autres propositions')
+    const radios = await page.getByRole('radio').all()
+    for (const radio of radios) {
+      if (!(await radio.isChecked())) {
+        await radio.click()
+        break
+      }
+    }
+    await scanAxe(page)
+    await page.getByRole('button', { name: 'Confirmer' }).click()
+
+    const after = await mealTitle.textContent()
+    expect(after).not.toBe(before)
+
+    await page.reload()
+    await page.waitForSelector('text=Ton menu du jour')
+    const afterReload = await mealTitle.textContent()
+    expect(afterReload).toBe(after)
+  })
 })
 
 test.describe('profile', () => {

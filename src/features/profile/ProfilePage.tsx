@@ -7,6 +7,7 @@ import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepos
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { ReadinessCheckRepository } from '@/core/history/ReadinessCheckRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
+import { MealOverrideRepository } from '@/core/nutrition/MealOverrideRepository'
 import { NutritionPreferencesRepository } from '@/core/nutrition/NutritionPreferencesRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
@@ -86,6 +87,7 @@ export function ProfilePage() {
     ReadinessCheckRepository.clear()
     AdaptationDecisionRepository.clear()
     NutritionPreferencesRepository.clear()
+    MealOverrideRepository.clear()
     void navigate('/onboarding', { replace: true })
   }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createNutritionPreferences } from '@/core/nutrition/NutritionPreferences'
 import { createPlannedSession } from '@/core/training/PlannedSession'
-import { buildDailyMenu, pickMeal } from './buildDailyMenu'
+import { buildDailyMenu, getMealAlternatives, pickMeal } from './buildDailyMenu'
 
 function session(overrides: Partial<Parameters<typeof createPlannedSession>[0]>) {
   return createPlannedSession({
@@ -67,6 +67,25 @@ describe('pickMeal', () => {
   it('prefers a macro-focus match when one is requested and available', () => {
     const meal = pickMeal('dinner', OMNIVORE_MODERATE, 'seed', 'carb-heavy')
     expect(meal?.macroFocus).toBe('carb-heavy')
+  })
+})
+
+describe('getMealAlternatives', () => {
+  it('only returns options compatible with the declared diet and restrictions', () => {
+    for (const slot of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
+      const alternatives = getMealAlternatives(slot, VEGAN_TIGHT_GF_NF)
+      expect(alternatives.length).toBeGreaterThan(0)
+      for (const meal of alternatives) {
+        expect(meal.compatibleDiets).toContain('vegan')
+        expect(meal.containsGluten).toBe(false)
+        expect(meal.containsNuts).toBe(false)
+      }
+    }
+  })
+
+  it('includes more than one option for a loose (omnivore, no restrictions) profile', () => {
+    const alternatives = getMealAlternatives('dinner', OMNIVORE_MODERATE)
+    expect(alternatives.length).toBeGreaterThan(1)
   })
 })
 
