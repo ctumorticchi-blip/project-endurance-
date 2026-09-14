@@ -6,6 +6,7 @@ import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { ReadinessCheckRepository } from '@/core/history/ReadinessCheckRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
+import { NutritionPreferencesRepository } from '@/core/nutrition/NutritionPreferencesRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
@@ -81,6 +82,7 @@ export function ProfilePage() {
     SessionFeedbackRepository.clear()
     ReadinessCheckRepository.clear()
     AdaptationDecisionRepository.clear()
+    NutritionPreferencesRepository.clear()
     void navigate('/onboarding', { replace: true })
   }
 

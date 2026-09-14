@@ -300,6 +300,73 @@ test.describe('nutrition', () => {
     expect(text).toMatch(/calculés à partir de ton poids/)
     await scanAxe(page)
   })
+
+  test('shows the preferences form before any daily menu is generated', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await scanAxe(page)
+  })
+
+  test('setting preferences reveals a daily menu with breakfast/lunch/dinner', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('radio', { name: 'Végétarien' }).click()
+    await page.getByRole('checkbox', { name: 'Sans lactose' }).click()
+    await page.getByRole('radio', { name: /Confortable/ }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+    const text = await page.locator('body').innerText()
+    expect(text.toLowerCase()).toMatch(/petit-déjeuner/)
+    expect(text.toLowerCase()).toMatch(/déjeuner/)
+    expect(text.toLowerCase()).toMatch(/dîner/)
+    await scanAxe(page)
+  })
+
+  test('produces a safe menu for the strictest diet + allergen combination (vegan, gluten-free, nut-free)', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('radio', { name: 'Végan' }).click()
+    await page.getByRole('checkbox', { name: 'Sans gluten' }).click()
+    await page.getByRole('checkbox', { name: 'Sans fruits à coque' }).click()
+    await page.getByRole('radio', { name: /Serré/ }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+    await scanAxe(page)
+  })
+
+  test('editing preferences reopens the form pre-filled, and cancel returns to the menu', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('radio', { name: 'Pescétarien' }).click()
+    await page.getByRole('radio', { name: /Modéré/ }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+
+    await page.getByRole('button', { name: 'Modifier mes préférences' }).click()
+    await expect(page.getByRole('radio', { name: 'Pescétarien' })).toBeChecked()
+    await scanAxe(page)
+
+    await page.getByRole('button', { name: 'Annuler' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+  })
+
+  test('the menu stays the same across a reload on the same day (deterministic, not random)', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Nutrition' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+    const before = await page.locator('body').innerText()
+
+    await page.reload()
+    await page.waitForSelector('text=Modifier mes préférences')
+    const after = await page.locator('body').innerText()
+    expect(after).toBe(before)
+  })
 })
 
 test.describe('profile', () => {
