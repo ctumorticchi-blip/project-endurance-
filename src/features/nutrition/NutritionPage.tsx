@@ -28,7 +28,7 @@ export function NutritionPage() {
     return <PlaceholderPage title="Nutrition" description="Ton programme n'a pas encore été généré." />
   }
 
-  const weightKg = profile?.biometrics.weightKg
+  const weightKg = profile?.biometrics?.weightKg
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
   const fueling = getFuelingGuidance(summary.session, weightKg)

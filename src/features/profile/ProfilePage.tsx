@@ -88,7 +88,7 @@ export function ProfilePage() {
 
   const zones = calculateAthleteZones(profile.knownMetrics)
   const metrics = profile.knownMetrics
-  const { sex, heightCm, weightKg } = profile.biometrics
+  const { sex, heightCm, weightKg } = profile.biometrics ?? {}
   const powerToWeight = calculatePowerToWeight(metrics.ftpWatts, weightKg, sex)
 
   const biometricsParts = [
