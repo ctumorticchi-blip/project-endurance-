@@ -8,26 +8,30 @@ touched. Default branch: `main`.
 
 ## 2. Production URL
 
-**None yet.** Attempted via `vercel deploy` (both authenticated and
-`--temporary` anonymous modes); every request to `api.vercel.com` was
-rejected by this session's network egress policy (`403` at the proxy
-layer, confirmed via `curl $HTTPS_PROXY/__agentproxy/status` — see
-recorded `connect_rejected` entries for `api.vercel.com:443`). This is an
-environment-level network restriction, not a missing credential — no
-retry or alternate CLI path gets around it from inside this session.
+**https://project-endurance-ugno.vercel.app/** — live and confirmed working.
 
-**What's needed:** a human needs to either (a) connect the GitHub repo to
-a new Vercel project via vercel.com's dashboard (Import Project →
-`ctumorticchi-blip/project-endurance-`, framework preset "Vite", build
-command `npm run build`, output directory `dist`), or (b) provide a Vercel
-token usable from an environment whose network policy allows
-`api.vercel.com`. The app is a static Vite build with zero backend
-dependencies, so deployment itself should be a 2-minute, zero-config step
+This session could not create the Vercel project itself: every attempt
+via `vercel deploy` (authenticated and `--temporary` anonymous modes) had
+`api.vercel.com` rejected by this session's network egress policy (`403`
+at the proxy layer, confirmed via `curl $HTTPS_PROXY/__agentproxy/status`
+— recorded `connect_rejected` entries for `api.vercel.com:443`). The
+Vercel project was instead connected to the GitHub repo directly by the
+user, outside this session, with default static-site settings.
+
+That first deployment built successfully but returned Vercel's static
+404 on any non-root path (e.g. `/today`) — expected for a client-side-routed
+SPA with no rewrite rule: the router never gets a chance to resolve the
+route because Vercel looks for a matching file first. Fixed by adding
+`vercel.json` with a catch-all rewrite to `index.html` (commit
+`2855afd`); the next auto-triggered deployment resolved it, confirmed by
+the user. I still cannot fetch this URL myself from inside this session
+(`project-endurance-ugno.vercel.app` is also rejected by the egress
+policy) — verification is by the user's own report, not a tool call.
 once network access exists.
 
 ## 3. Final SHA
 
-`a6f7743a44fd922d80b0123ade2509d08d231fe6`
+`2855afd0645dc876f17f019d70f658b3e8c11f67`
 
 ## 4. Architecture finale
 
@@ -206,8 +210,10 @@ final.
 
 ## 21. Known limitations
 
-- **Déploiement** : bloqué par la politique réseau de cet environnement
-  (voir §2) — jamais testé sur une vraie URL publique, seulement en local.
+- **Déploiement** : en production sur Vercel (voir §2), mais jamais vérifié
+  par un outil depuis cette session — `project-endurance-ugno.vercel.app`
+  est lui aussi bloqué par la politique réseau de cet environnement.
+  Confirmé fonctionnel uniquement par retour direct de l'utilisateur.
 - **Session player** : chronomètre uniquement (pas de saisie GPS/capteur en
   direct), cohérent avec le principe "M0 fonctionne sans montre connectée"
   mais signifie que les métriques réalisées (FC, puissance, allure) sont
@@ -246,15 +252,20 @@ final.
   course dans le passé ou à J0 exact — la fonction `daysUntilRace` gère
   bien le cas (clampé à 0) mais l'UX ne prévient pas explicitement ce
   cas d'usage improbable.
-- Le blocage réseau sur `api.vercel.com` est spécifique à cet
-  environnement d'exécution ; un futur agent dans un environnement à la
-  politique réseau différente devrait retenter le déploiement plutôt que
-  supposer un blocage permanent.
+- Le blocage réseau sur `api.vercel.com` et `*.vercel.app` est spécifique
+  à cet environnement d'exécution ; un futur agent dans un environnement à
+  la politique réseau différente devrait retenter l'accès plutôt que
+  supposer un blocage permanent — l'app elle-même est bien déployée et
+  fonctionnelle, seule la vérification outillée depuis cette session est
+  impossible.
 
 ## 24. Recommendations before M1
 
-1. Résoudre le déploiement (accès Vercel) pour valider le build en
-   production réelle avant d'investir dans le polish visuel de M1.
+1. Faire vérifier `project-endurance-ugno.vercel.app` par un outil
+   externe à cette session (CI, un autre environnement) pour avoir une
+   confirmation autre que le retour verbal de l'utilisateur — et
+   envisager un nom de projet Vercel définitif plutôt que le suffixe
+   auto-généré `-ugno`.
 2. Faire tester le parcours complet par un vrai triathlète (pas seulement
    des scénarios simulés) pour valider la pertinence sportive du
    catalogue de séances et du rythme de progression.

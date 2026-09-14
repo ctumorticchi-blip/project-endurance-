@@ -80,10 +80,14 @@ colocalisés avec le code qu'ils couvrent. `src/simulation/scenarios.test.ts`
 fait tourner des scénarios athlète réalistes de bout en bout (§57 du brief
 produit) plutôt que de tester une fonction isolément.
 
+## Déploiement
+
+**https://project-endurance-ugno.vercel.app/** — build de production
+Vite déployé sur Vercel (rewrite SPA configuré dans `vercel.json`).
+
 ## Roadmap actuelle
 
 **M0 — Le coach fonctionne — terminé** (M0.0 à M0.12, voir `docs/roadmap.md`
 pour le détail milestone par milestone). Le projet s'arrête ici pour
-évaluation humaine avant toute considération de M1 — voir le rapport final
-du projet pour le bilan complet, les limites connues et le blocage réseau
-sur le déploiement Vercel.
+évaluation humaine avant toute considération de M1 — voir
+`docs/m0-final-report.md` pour le bilan complet et les limites connues.
