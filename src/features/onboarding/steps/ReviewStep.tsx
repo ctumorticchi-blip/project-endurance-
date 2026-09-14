@@ -1,5 +1,6 @@
 import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
 import { WEEKDAYS, type Weekday } from '@/shared/types/common'
+import { formatHoursAndMinutes } from '@/shared/utils/duration'
 import type { OnboardingDraft } from '../onboardingState'
 
 const WEEKDAY_LABELS: Record<Weekday, string> = {
@@ -46,7 +47,7 @@ export function ReviewStep({ draft }: ReviewStepProps) {
           <dt className="text-text-muted">Disponibilités</dt>
           <dd>
             {availableDays.length} jour{availableDays.length > 1 ? 's' : ''} ·{' '}
-            {Math.round(totalMinutes / 60)} h/semaine
+            {formatHoursAndMinutes(totalMinutes)}/semaine
           </dd>
         </div>
         <div className="flex justify-between">

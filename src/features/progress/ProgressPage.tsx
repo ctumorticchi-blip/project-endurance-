@@ -10,6 +10,7 @@ import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { ProgressBar } from '@/shared/components/ProgressBar'
 import { StatTile } from '@/shared/components/StatTile'
+import { formatHoursAndMinutes } from '@/shared/utils/duration'
 import { WeeklyVolumeChart } from './WeeklyVolumeChart'
 
 const DISCIPLINE_LABELS: Record<string, string> = {
@@ -52,7 +53,7 @@ export function ProgressPage() {
           label="Séances enregistrées"
           value={String(summary.totalCompletedSessions)}
         />
-        <StatTile label="Temps total" value={`${Math.round(summary.totalMinutes / 60)} h`} />
+        <StatTile label="Temps total" value={formatHoursAndMinutes(summary.totalMinutes)} />
         {summary.consistencyRate !== undefined && (
           <StatTile
             label="Régularité"
@@ -86,11 +87,11 @@ export function ProgressPage() {
               <li key={discipline} className="flex flex-col gap-1 text-sm">
                 <div className="flex justify-between">
                   <span>{DISCIPLINE_LABELS[discipline] ?? discipline}</span>
-                  <span className="text-text-muted">{Math.round(minutes / 60)} h</span>
+                  <span className="text-text-muted">{formatHoursAndMinutes(minutes)}</span>
                 </div>
                 <ProgressBar
                   value={(minutes / maxDisciplineMinutes) * 100}
-                  label={`${DISCIPLINE_LABELS[discipline] ?? discipline} : ${Math.round(minutes / 60)} heures`}
+                  label={`${DISCIPLINE_LABELS[discipline] ?? discipline} : ${formatHoursAndMinutes(minutes)}`}
                 />
               </li>
             ))}
