@@ -20,14 +20,24 @@ Texte en trois intensités (`text` / `text-muted` / `text-faint`) — jamais
 d'information critique portée uniquement par la couleur.
 
 **Règle de contraste** : chaque `Badge` teinté (`primary`/`accent`/
-`warning`/`danger`) mélange sa couleur à 15 % au-dessus du fond de page
-très sombre — c'est ce qui garantit le ratio WCAG AA (4.5:1) pour le texte
-de même teinte. Ne jamais imbriquer un `Badge` teinté à l'intérieur d'un
-autre conteneur déjà teinté de la même couleur (ex. une bannière
-`bg-accent/10`) : les deux calques translucides s'additionnent, éclaircissent
-le fond composite, et font échouer le contraste (mesuré 3.97:1 dans ce cas
-précis — trouvé et corrigé via un scan axe-core réel, pas en lecture de
-code). Dans ce contexte, utiliser `tone="neutral"` pour le badge imbriqué.
+`warning`/`danger`) mélange sa couleur à 8 % au-dessus de son fond. Un
+`Badge` n'apparaît jamais sur un seul fond : selon la `Card` qui l'entoure,
+c'est `background`, `surface`, `surface-muted` ou `surface-raised`. Un
+premier réglage à 15 % ne tenait le ratio WCAG AA (4.5:1) que sur le fond
+de page le plus sombre — la tonalité `danger` mesurait 4.23:1 sur
+`surface-raised` via un scan axe-core réel (un `Badge tone="danger"`
+imbriqué dans une `Card variant="raised"`), en dessous du seuil. 8 %
+garantit 4.5:1 sur les quatre fonds à la fois (pire cas 4.68:1). Ne jamais
+recalibrer une seule tonalité isolément : vérifier les quatre fonds pour
+les quatre tonalités avant de changer l'alpha.
+
+Ne jamais imbriquer un `Badge` teinté à l'intérieur d'un autre conteneur
+déjà teinté de la même couleur (ex. une bannière `bg-accent/10`) : les deux
+calques translucides s'additionnent, éclaircissent le fond composite, et
+font échouer le contraste (mesuré 3.97:1 dans ce cas précis, à l'ancien
+réglage 15 % — trouvé et corrigé via un scan axe-core réel, pas en lecture
+de code). Dans ce contexte, utiliser `tone="neutral"` pour le badge
+imbriqué.
 
 `text-faint` a été recalculé (`#5C6774` → `#868E98`) après un scan axe-core
 sur le Session Player : contre les quatre fonds de l'app (`background`,
@@ -69,6 +79,12 @@ aux grands conteneurs). Un seul jeu de valeurs utilisé partout — plus de
   `aria-value*`), sans libellé visible : le `label` passé en prop porte le
   nom accessible. Utilisée pour la progression d'une séance (étapes) et
   celle d'une étape en cours (décompte) dans le Session Player.
+- **AdaptationDecisionCard** — une décision du moteur d'adaptation
+  (`AdaptationDecision`), toujours affichée avec son type (Badge), son
+  éventuel changement concret ("70 min → 49 min") et sa justification en
+  langage clair : jamais une mutation silencieuse (brief §28). Utilisée à
+  la fois comme écran de résultat (séance manquée) et comme élément de
+  liste (historique dans Progrès).
 - `inputStyles.ts` (`INPUT_CLASSES`) — la classe partagée par tous les
   champs texte/nombre/date/textarea de l'app.
 

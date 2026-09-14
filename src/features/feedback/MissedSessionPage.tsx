@@ -14,6 +14,7 @@ import {
 } from '@/engine/adaptation/applyAdaptationToPlan'
 import { decideAdaptation } from '@/engine/adaptation/decideAdaptation'
 import { computeUpcomingSlots } from '@/engine/adaptation/upcomingAvailability'
+import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Button } from '@/shared/components/Button'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
@@ -48,9 +49,7 @@ export function MissedSessionPage() {
     return (
       <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
         <h1 className="text-lg font-semibold">Programme mis à jour</h1>
-        <p className="rounded-[var(--radius-sm)] bg-surface-muted px-3 py-2 text-sm text-text-muted">
-          {outcome.explanation}
-        </p>
+        <AdaptationDecisionCard decision={outcome} className="w-full" />
         <Button onClick={() => void navigate('/today', { replace: true })} className="w-full">
           Retour à Aujourd'hui
         </Button>

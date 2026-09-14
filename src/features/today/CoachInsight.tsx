@@ -1,18 +1,11 @@
+import type { AdaptationType } from '@/engine/adaptation/AdaptationDecision'
+import { ADAPTATION_TYPE_LABELS } from '@/engine/adaptation/adaptationLabels'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 
-const ADAPTATION_TYPE_LABELS: Record<string, string> = {
-  KEEP: 'Inchangé',
-  REDUCE: 'Réduit',
-  INCREASE: 'Augmenté',
-  MOVE: 'Déplacé',
-  REPLACE: 'Remplacé',
-  REMOVE: 'Retiré',
-}
-
 interface CoachInsightProps {
   message: string
-  adaptation?: { type: string; explanation: string }
+  adaptation?: { type: AdaptationType; explanation: string }
 }
 
 /** One coherent "coach voice" for the day: the plan-driven explanation of
@@ -29,7 +22,7 @@ export function CoachInsight({ message, adaptation }: CoachInsightProps) {
           {/* neutral, not "accent": stacking two translucent accent layers
            * (this box + an accent-toned badge) lightens the composited
            * background enough to fail contrast — see docs/design-system.md */}
-          <Badge tone="neutral">{ADAPTATION_TYPE_LABELS[adaptation.type] ?? adaptation.type}</Badge>
+          <Badge tone="neutral">{ADAPTATION_TYPE_LABELS[adaptation.type]}</Badge>
           <p role="status" className="text-sm text-accent">
             {adaptation.explanation}
           </p>

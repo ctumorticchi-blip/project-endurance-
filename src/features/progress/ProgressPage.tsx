@@ -5,6 +5,7 @@ import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import { buildProgressSummary } from '@/engine/history/buildProgressSummary'
 import { buildWeeklyVolumeTrend } from '@/engine/history/buildWeeklyVolumeTrend'
+import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { ProgressBar } from '@/shared/components/ProgressBar'
@@ -102,14 +103,7 @@ export function ProgressPage() {
           <h2 className="mb-2 text-sm font-semibold">Derniers ajustements du programme</h2>
           <ul className="flex flex-col gap-2">
             {summary.recentAdaptations.map((decision, i) => (
-              <Card
-                key={`${decision.sessionId}-${decision.type}-${i}`}
-                as="li"
-                variant="muted"
-                className="text-xs text-text-muted"
-              >
-                {decision.explanation}
-              </Card>
+              <AdaptationDecisionCard key={`${decision.sessionId}-${decision.type}-${i}`} as="li" decision={decision} />
             ))}
           </ul>
         </section>
