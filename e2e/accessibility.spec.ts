@@ -597,6 +597,23 @@ test.describe('profile', () => {
     await page.getByRole('link', { name: 'Aujourd’hui' }).click()
     await expect(page.getByText('Autres courses à venir')).toHaveCount(0)
   })
+
+  test('legal pages are reachable and cross-link to each other', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+
+    await page.getByRole('link', { name: 'Mentions légales' }).click()
+    await page.waitForSelector('text=Mentions légales')
+    await scanAxe(page)
+
+    await page.getByRole('link', { name: 'Politique de confidentialité' }).click()
+    await page.waitForSelector('text=Politique de confidentialité')
+    await scanAxe(page)
+
+    await page.getByRole('link', { name: 'Retour au profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+  })
 })
 
 test.describe('calibration tests', () => {

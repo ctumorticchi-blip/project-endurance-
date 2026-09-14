@@ -6,6 +6,8 @@ import { ThresholdPaceTestPage } from '@/features/calibration/ThresholdPaceTestP
 import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage'
 import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { GlossaryPage } from '@/features/glossary/GlossaryPage'
+import { MentionsLegalesPage } from '@/features/legal/MentionsLegalesPage'
+import { PrivacyPolicyPage } from '@/features/legal/PrivacyPolicyPage'
 import { NutritionPage } from '@/features/nutrition/NutritionPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { DayDetailPage } from '@/features/plan/DayDetailPage'
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
           { path: 'profile/tests/css', element: <CssTestPage /> },
           { path: 'profile/tests/threshold', element: <ThresholdPaceTestPage /> },
           { path: 'glossary', element: <GlossaryPage /> },
+          { path: 'legal/mentions-legales', element: <MentionsLegalesPage /> },
+          { path: 'legal/confidentialite', element: <PrivacyPolicyPage /> },
           {
             path: '*',
             element: (

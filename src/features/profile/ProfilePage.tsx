@@ -188,6 +188,15 @@ export function ProfilePage() {
         Glossaire des termes techniques
       </Link>
 
+      <div className="flex gap-4">
+        <Link to="/legal/mentions-legales" className="text-xs font-medium text-text-muted underline">
+          Mentions légales
+        </Link>
+        <Link to="/legal/confidentialite" className="text-xs font-medium text-text-muted underline">
+          Confidentialité
+        </Link>
+      </div>
+
       {showDetails && (
         <Card className="flex flex-col gap-4">
           {zones.heartRate && <ZoneTable title="Fréquence cardiaque" zones={zones.heartRate} unit="bpm" />}
