@@ -14,6 +14,7 @@ import { Card } from '@/shared/components/Card'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
+import { formatBlock } from '@/shared/utils/workoutBlock'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
 import { CoachInsight } from './CoachInsight'
 import { RaceCountdown } from './RaceCountdown'
@@ -39,15 +40,6 @@ const PRIORITY_TONE = {
   secondary: 'neutral',
   optional: 'neutral',
 } as const
-
-function formatBlock(block: { label: string; durationSec?: number; distanceMeters?: number; repeat?: number; restSec?: number; note?: string }) {
-  const parts: string[] = []
-  if (block.repeat && block.repeat > 1) parts.push(`${block.repeat} x`)
-  if (block.durationSec) parts.push(`${Math.round(block.durationSec / 60)} min`)
-  if (block.distanceMeters) parts.push(`${block.distanceMeters} m`)
-  if (block.restSec) parts.push(`récup ${block.restSec}s`)
-  return parts.join(' ')
-}
 
 export function TodayPage() {
   const [adaptation, setAdaptation] = useState<AdaptationDecision | null>(null)

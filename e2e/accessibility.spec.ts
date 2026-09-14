@@ -125,32 +125,29 @@ test.describe('today', () => {
 })
 
 test.describe('session player', () => {
-  test('first step', async ({ page }) => {
+  test('shows the full checklist, no timer', async ({ page }) => {
     await completeOnboarding(page)
     await page.getByRole('link', { name: 'Commencer' }).click()
-    await page.waitForSelector('text=Suivant :')
+    await page.waitForSelector('text=Séance effectuée')
     await scanAxe(page)
   })
 
-  test('paused step', async ({ page }) => {
+  test('ticking a block off updates the checklist', async ({ page }) => {
     await completeOnboarding(page)
     await page.getByRole('link', { name: 'Commencer' }).click()
-    await page.waitForSelector('text=Suivant :')
-    await page.getByRole('button', { name: 'Pause' }).click()
+    await page.waitForSelector('text=Séance effectuée')
+    const firstCheckbox = page.getByRole('checkbox').first()
+    await firstCheckbox.click()
+    await expect(firstCheckbox).toBeChecked()
     await scanAxe(page)
   })
 
-  test('finished screen', async ({ page }) => {
+  test('"Séance effectuée" leads straight to the feedback form', async ({ page }) => {
     await completeOnboarding(page)
     await page.getByRole('link', { name: 'Commencer' }).click()
-    let guard = 0
-    while (guard < 60) {
-      guard++
-      if ((await page.locator('body').innerText()).includes('Séance terminée')) break
-      await page.getByRole('button', { name: 'Passer' }).click()
-      await page.waitForTimeout(50)
-    }
-    await page.waitForSelector('text=Séance terminée')
+    await page.waitForSelector('text=Séance effectuée')
+    await page.getByRole('button', { name: 'Séance effectuée' }).click()
+    await page.waitForSelector("text=Comment s'est passée")
     await scanAxe(page)
   })
 })
@@ -198,14 +195,8 @@ test.describe('progress', () => {
     await page.getByRole('button', { name: 'Fatigué' }).click()
     await page.waitForTimeout(150)
     await page.getByRole('link', { name: 'Commencer' }).click()
-    let guard = 0
-    while (guard < 60) {
-      guard++
-      if ((await page.locator('body').innerText()).includes('Séance terminée')) break
-      await page.getByRole('button', { name: 'Passer' }).click()
-      await page.waitForTimeout(50)
-    }
-    await page.getByRole('button', { name: 'Continuer' }).click()
+    await page.waitForSelector('text=Séance effectuée')
+    await page.getByRole('button', { name: 'Séance effectuée' }).click()
     await page.waitForSelector("text=Comment s'est passée")
     await page.getByRole('button', { name: '6', exact: true }).click()
     await page.getByRole('radio', { name: 'Comme prévu' }).click()

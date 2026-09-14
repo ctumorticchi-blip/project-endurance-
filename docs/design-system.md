@@ -77,8 +77,9 @@ aux grands conteneurs). Un seul jeu de valeurs utilisé partout — plus de
   natifs (`fieldset`/`legend`), zéro ARIA reconstruite à la main.
 - **ProgressBar** — barre de progression déterminée (`role="progressbar"` +
   `aria-value*`), sans libellé visible : le `label` passé en prop porte le
-  nom accessible. Utilisée pour la progression d'une séance (étapes) et
-  celle d'une étape en cours (décompte) dans le Session Player.
+  nom accessible. Utilisée pour le volume par discipline dans Progrès.
+  (Le Session Player n'a plus de notion d'étape/décompte à mesurer — voir
+  ci-dessous.)
 - **AdaptationDecisionCard** — une décision du moteur d'adaptation
   (`AdaptationDecision`), toujours affichée avec son type (Badge), son
   éventuel changement concret ("70 min → 49 min") et sa justification en
@@ -94,3 +95,15 @@ La hiérarchie visuelle profonde de chaque écran (Today, Session Player,
 Plan) arrive avec leurs milestones dédiés (M1.1–M1.3) — M1.0 établit le
 système et l'applique partout où un remplacement mécanique améliore la
 cohérence sans redessiner l'écran.
+
+## Session Player : plus de chrono
+
+Retour utilisateur après M1 : le décompte par étape supposait une
+précision (le respect exact des secondes par bloc) que l'app n'a aucun
+moyen de vérifier, et forçait à suivre l'écran en continu. Le Session
+Player affiche maintenant toute la structure de la séance d'un coup —
+comme la section "Structure" d'Aujourd'hui — avec une case à cocher par
+bloc (aide-mémoire, pas une contrainte : elle ne bloque rien) et un bouton
+unique "Séance effectuée" qui mène directement au formulaire de ressenti.
+`useCountdown`, `StepPlayer` et `flattenSessionSteps` ont été supprimés
+plutôt que laissés inutilisés.
