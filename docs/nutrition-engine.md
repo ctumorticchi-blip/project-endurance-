@@ -64,7 +64,11 @@ La rotation entre plusieurs repas compatibles pour un même créneau est
 **déterministe** (petit hash de la date + créneau, pas de hasard) : le
 menu d'une journée donnée reste identique si on recharge la page, mais
 varie d'un jour à l'autre pour éviter de répéter mécaniquement le même
-repas.
+repas. Le catalogue compte une soixantaine de repas (environ 16 par
+créneau) couvrant des cuisines et sources de protéines variées — sur un
+programme complet de plusieurs mois, la quasi-totalité des repas
+compatibles avec un régime donné finit par apparaître (vérifié : ~15
+petits-déjeuners/déjeuners/dîners distincts sur une fenêtre de 90 jours).
 
 ## Ce qui n'est délibérément pas fait
 
