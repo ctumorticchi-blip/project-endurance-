@@ -28,7 +28,7 @@ describe('App', () => {
   it('sends a fresh visitor into onboarding first', async () => {
     window.history.pushState({}, '', '/')
     render(<App />)
-    expect(await screen.findByText('Ton objectif')).toBeInTheDocument()
+    expect(await screen.findByText('Construisons ton programme')).toBeInTheDocument()
   })
 
   it('redirects an onboarded athlete straight to Today with navigation visible', async () => {

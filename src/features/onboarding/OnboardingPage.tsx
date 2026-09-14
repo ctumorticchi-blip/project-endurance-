@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { brand } from '@/config/brand'
 import { Button } from '@/shared/components/Button'
 import { ONBOARDING_STEPS, createInitialDraft, type OnboardingDraft } from './onboardingState'
 import { isStepValid } from './stepValidation'
@@ -20,8 +21,15 @@ const STEP_TITLES: Record<(typeof ONBOARDING_STEPS)[number], string> = {
   review: 'Résumé',
 }
 
+const WELCOME_HIGHLIGHTS = [
+  'Ton objectif de course, ton expérience et ton matériel',
+  'Tes disponibilités réelles, pas un planning idéal',
+  'Un programme qui s’explique et s’ajuste ensuite à ta vraie vie',
+]
+
 export function OnboardingPage() {
   const navigate = useNavigate()
+  const [showWelcome, setShowWelcome] = useState(true)
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState<OnboardingDraft>(createInitialDraft)
 
@@ -40,22 +48,57 @@ export function OnboardingPage() {
     void navigate('/today', { replace: true })
   }
 
+  if (showWelcome) {
+    return (
+      <div className="flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10 text-center">
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold tracking-wide text-primary uppercase">{brand.name}</p>
+          <h1 className="text-2xl font-bold">Construisons ton programme</h1>
+          <p className="text-sm text-text-muted">{brand.tagline}</p>
+        </div>
+
+        <ul className="flex flex-col gap-2 text-left text-sm text-text-muted">
+          {WELCOME_HIGHLIGHTS.map((highlight) => (
+            <li key={highlight} className="flex items-start gap-2">
+              <span aria-hidden="true" className="mt-0.5 text-primary">
+                ✓
+              </span>
+              {highlight}
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex w-full flex-col gap-2">
+          <Button onClick={() => setShowWelcome(false)} className="w-full">
+            Commencer
+          </Button>
+          <p className="text-xs text-text-faint">Environ 3 minutes.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-full flex-col">
-      <div
-        role="progressbar"
-        aria-valuenow={stepIndex + 1}
-        aria-valuemin={1}
-        aria-valuemax={ONBOARDING_STEPS.length}
-        aria-label={`Étape ${stepIndex + 1} sur ${ONBOARDING_STEPS.length} : ${step ? STEP_TITLES[step] : ''}`}
-        className="flex gap-1 px-4 pt-4"
-      >
-        {ONBOARDING_STEPS.map((s, i) => (
-          <span
-            key={s}
-            className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-primary' : 'bg-surface-muted'}`}
-          />
-        ))}
+      <div className="flex flex-col gap-1.5 px-4 pt-4">
+        <div
+          role="progressbar"
+          aria-valuenow={stepIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={ONBOARDING_STEPS.length}
+          aria-label={`Étape ${stepIndex + 1} sur ${ONBOARDING_STEPS.length} : ${step ? STEP_TITLES[step] : ''}`}
+          className="flex gap-1"
+        >
+          {ONBOARDING_STEPS.map((s, i) => (
+            <span
+              key={s}
+              className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-primary' : 'bg-surface-muted'}`}
+            />
+          ))}
+        </div>
+        <p aria-hidden="true" className="text-xs text-text-faint">
+          Étape {stepIndex + 1}/{ONBOARDING_STEPS.length} · {step ? STEP_TITLES[step] : ''}
+        </p>
       </div>
 
       <div className="flex-1">

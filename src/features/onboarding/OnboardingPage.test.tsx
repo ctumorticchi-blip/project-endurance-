@@ -21,9 +21,21 @@ function renderOnboarding() {
 }
 
 describe('OnboardingPage', () => {
+  it('shows a welcome screen before the first step', async () => {
+    const user = userEvent.setup()
+    renderOnboarding()
+
+    expect(screen.getByText('Construisons ton programme')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continuer' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Commencer' }))
+    expect(screen.getByText('Ton objectif')).toBeInTheDocument()
+  })
+
   it('walks a full happy path and persists the three domain aggregates', async () => {
     const user = userEvent.setup()
     renderOnboarding()
+    await user.click(screen.getByRole('button', { name: 'Commencer' }))
 
     // Step 1: race goal
     await user.click(screen.getByLabelText(/Sprint/))
@@ -86,8 +98,10 @@ describe('OnboardingPage', () => {
     }
   })
 
-  it('keeps Continue disabled until the current step is valid', () => {
+  it('keeps Continue disabled until the current step is valid', async () => {
+    const user = userEvent.setup()
     renderOnboarding()
+    await user.click(screen.getByRole('button', { name: 'Commencer' }))
     expect(screen.getByRole('button', { name: 'Continuer' })).toBeDisabled()
   })
 })
