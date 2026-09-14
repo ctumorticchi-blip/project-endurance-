@@ -4,6 +4,7 @@ import { FtpTestPage } from '@/features/calibration/FtpTestPage'
 import { ThresholdPaceTestPage } from '@/features/calibration/ThresholdPaceTestPage'
 import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage'
 import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
+import { GlossaryPage } from '@/features/glossary/GlossaryPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { PlanPage } from '@/features/plan/PlanPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
           { path: 'profile/tests/ftp', element: <FtpTestPage /> },
           { path: 'profile/tests/css', element: <CssTestPage /> },
           { path: 'profile/tests/threshold', element: <ThresholdPaceTestPage /> },
+          { path: 'glossary', element: <GlossaryPage /> },
           {
             path: '*',
             element: (

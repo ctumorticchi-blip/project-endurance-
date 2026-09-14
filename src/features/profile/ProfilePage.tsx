@@ -136,6 +136,10 @@ export function ProfilePage() {
         {showDetails ? 'Masquer le détail des zones' : 'Voir le détail des zones'}
       </button>
 
+      <Link to="/glossary" className="text-sm font-medium text-accent underline">
+        Glossaire des termes techniques
+      </Link>
+
       {showDetails && (
         <Card className="flex flex-col gap-4">
           {zones.heartRate && <ZoneTable title="Fréquence cardiaque" zones={zones.heartRate} unit="bpm" />}
