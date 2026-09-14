@@ -195,6 +195,38 @@ test.describe('today', () => {
     expect(afterText).not.toBe(beforeText)
     await scanAxe(page)
   })
+
+  test('converting to "Repos" removes the session and asks whether to move it', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('button', { name: 'Changer de séance' }).click()
+    await page.getByRole('radio', { name: 'Repos' }).click()
+    await page.getByRole('button', { name: 'Confirmer' }).click()
+    await page.waitForSelector('text=Jour de repos ajouté')
+    await scanAxe(page)
+
+    // fillAvailabilityStep marks every day available (incl. the chosen
+    // rest day, Sunday, at 90 min) so a move candidate always exists.
+    const moveDay = page.getByRole('radio').first()
+    await moveDay.click()
+    await page.getByRole('button', { name: 'Déplacer', exact: true }).click()
+    await page.waitForTimeout(150)
+    // Back to the normal Today view (today is now a rest day).
+    await expect(page.getByText('Jour de repos ajouté')).toHaveCount(0)
+    await scanAxe(page)
+  })
+
+  test('converting to "Repos" and declining to move it leaves today as a rest day', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('button', { name: 'Changer de séance' }).click()
+    await page.getByRole('radio', { name: 'Repos' }).click()
+    await page.getByRole('button', { name: 'Confirmer' }).click()
+    await page.waitForSelector('text=Jour de repos ajouté')
+
+    await page.getByRole('button', { name: 'Ne pas déplacer' }).click()
+    await page.waitForTimeout(150)
+    await expect(page.getByText('Jour de repos')).toBeVisible()
+    await scanAxe(page)
+  })
 })
 
 test.describe('session player', () => {

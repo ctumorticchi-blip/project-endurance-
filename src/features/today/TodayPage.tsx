@@ -9,13 +9,19 @@ import type { PlannedSession } from '@/core/training/PlannedSession'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import type { AdaptationDecision } from '@/engine/adaptation/AdaptationDecision'
-import { applyDurationAdaptation, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
+import {
+  addSessionToPlan,
+  applyDurationAdaptation,
+  removeSessionFromPlan,
+  replaceSessionInPlan,
+} from '@/engine/adaptation/applyAdaptationToPlan'
 import { decideAdaptation, decideAvailabilityConstraint } from '@/engine/adaptation/decideAdaptation'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { RestDayMovePrompt } from '@/shared/components/RestDayMovePrompt'
 import { SwapSessionControl } from '@/shared/components/SwapSessionControl'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
 import { toISODate } from '@/shared/utils/date'
@@ -40,6 +46,7 @@ const PRIORITY_TONE = {
 
 export function TodayPage() {
   const [adaptation, setAdaptation] = useState<AdaptationDecision | null>(null)
+  const [pendingRest, setPendingRest] = useState<PlannedSession | null>(null)
   const [, forceRefresh] = useState(0)
   const plan = TrainingPlanRepository.load()
   const raceGoal = RaceGoalRepository.load()
@@ -86,6 +93,26 @@ export function TodayPage() {
     forceRefresh((v) => v + 1)
   }
 
+  const handleConvertToRest = () => {
+    if (!summary.session) return
+    const cancelled = summary.session
+    TrainingPlanRepository.save(removeSessionFromPlan(plan, cancelled.id))
+    setAdaptation(null)
+    setPendingRest(cancelled)
+    forceRefresh((v) => v + 1)
+  }
+
+  const handleMoveResolved = (moved: PlannedSession | undefined) => {
+    if (moved && pendingRest) {
+      const latestPlan = TrainingPlanRepository.load()
+      if (latestPlan) {
+        TrainingPlanRepository.save(addSessionToPlan(latestPlan, pendingRest.weekId, moved))
+      }
+    }
+    setPendingRest(null)
+    forceRefresh((v) => v + 1)
+  }
+
   const activeAdaptation = adaptation && adaptation.type !== 'KEEP' ? adaptation : undefined
 
   return (
@@ -94,7 +121,16 @@ export function TodayPage() {
       <RaceCountdown raceLabel={summary.raceLabel} daysUntilRace={summary.daysUntilRace} />
       <NutritionSetupPrompt />
 
-      {summary.session ? (
+      {pendingRest && week && availability ? (
+        <RestDayMovePrompt
+          cancelledSession={pendingRest}
+          week={week}
+          phase={week.phase}
+          availability={availability}
+          planEndDateExclusive={raceGoal.raceDate}
+          onResolved={handleMoveResolved}
+        />
+      ) : summary.session ? (
         <>
           <Card variant="raised">
             <div className="mb-1 flex items-center justify-between">
@@ -151,6 +187,7 @@ export function TodayPage() {
               phase={week.phase}
               availability={availability}
               onSwapped={handleSwap}
+              onConvertedToRest={handleConvertToRest}
             />
           )}
 

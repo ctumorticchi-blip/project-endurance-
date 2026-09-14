@@ -8,28 +8,45 @@ import type { Discipline } from '@/shared/types/common'
 import { Button } from './Button'
 import { ChoiceGroup } from './ChoiceGroup'
 
+type SwapChoice = Discipline | 'rest'
+
 interface SwapSessionControlProps {
   session: PlannedSession
   week: TrainingWeek
   phase: TrainingPhaseName
   availability: Availability
   onSwapped: (newSession: PlannedSession) => void
+  /** Called when the athlete picks "Repos" and confirms — the caller
+   * removes the session and then decides whether to offer moving it to
+   * another day this week (brief feedback: ask each time, don't guess). */
+  onConvertedToRest: () => void
 }
 
 /**
  * "It's raining, I'll swim instead of riding today" — lets the athlete
  * replace a session's discipline outright, effective immediately (brief
- * feedback). Only offers disciplines `swapSessionDiscipline` confirms
- * actually fit the day (available time, pool access), so confirming never
- * fails — there is nothing to pick that wouldn't work.
+ * feedback). Also offers "Repos" as an option distinct from every actual
+ * discipline: it always fits (no time/pool constraint), so it's never
+ * filtered out the way a genuine discipline swap can be.
  */
-export function SwapSessionControl({ session, week, phase, availability, onSwapped }: SwapSessionControlProps) {
+export function SwapSessionControl({
+  session,
+  week,
+  phase,
+  availability,
+  onSwapped,
+  onConvertedToRest,
+}: SwapSessionControlProps) {
   const [open, setOpen] = useState(false)
-  const [choice, setChoice] = useState<Discipline>()
+  const [choice, setChoice] = useState<SwapChoice>()
 
-  const viableChoices = SWAPPABLE_DISCIPLINES.filter(
+  const viableDisciplines = SWAPPABLE_DISCIPLINES.filter(
     (d) => swapSessionDiscipline(session, d, { phase, week, availability }) !== undefined,
   )
+  const choices: { value: SwapChoice; label: string }[] = [
+    ...viableDisciplines.map((d) => ({ value: d, label: DISCIPLINE_LABELS[d] })),
+    { value: 'rest', label: 'Repos' },
+  ]
 
   if (!open) {
     return (
@@ -43,16 +60,14 @@ export function SwapSessionControl({ session, week, phase, availability, onSwapp
     )
   }
 
-  if (viableChoices.length === 0) {
-    return (
-      <p className="text-xs text-text-muted">
-        Aucune séance alternative ne convient aujourd'hui (temps disponible ou accès piscine).
-      </p>
-    )
-  }
-
   const handleConfirm = () => {
     if (!choice) return
+    if (choice === 'rest') {
+      onConvertedToRest()
+      setOpen(false)
+      setChoice(undefined)
+      return
+    }
     const result = swapSessionDiscipline(session, choice, { phase, week, availability })
     if (!result) return
     onSwapped(result)
@@ -65,7 +80,7 @@ export function SwapSessionControl({ session, week, phase, availability, onSwapp
       <ChoiceGroup
         legend="Remplacer par"
         name="swap-discipline"
-        choices={viableChoices.map((d) => ({ value: d, label: DISCIPLINE_LABELS[d] }))}
+        choices={choices}
         value={choice}
         onChange={setChoice}
       />

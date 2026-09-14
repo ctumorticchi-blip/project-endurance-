@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
+import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import { findSessionForDate, findWeekForDate } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
-import { replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
+import { addSessionToPlan, removeSessionFromPlan, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { RestDayMovePrompt } from '@/shared/components/RestDayMovePrompt'
 import { SwapSessionControl } from '@/shared/components/SwapSessionControl'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
 import { toISODate } from '@/shared/utils/date'
@@ -30,10 +32,12 @@ function formatFullDate(dateISO: string): string {
 export function DayDetailPage() {
   const { date } = useParams<{ date: string }>()
   const [, forceRefresh] = useState(0)
+  const [pendingRest, setPendingRest] = useState<PlannedSession | null>(null)
   const plan = TrainingPlanRepository.load()
   const availability = AvailabilityRepository.load()
+  const raceGoal = RaceGoalRepository.load()
 
-  if (!plan || !date) {
+  if (!plan || !date || !raceGoal) {
     return (
       <PlaceholderPage
         title="Jour introuvable"
@@ -61,6 +65,24 @@ export function DayDetailPage() {
     forceRefresh((v) => v + 1)
   }
 
+  const handleConvertToRest = () => {
+    if (!session) return
+    TrainingPlanRepository.save(removeSessionFromPlan(plan, session.id))
+    setPendingRest(session)
+    forceRefresh((v) => v + 1)
+  }
+
+  const handleMoveResolved = (moved: PlannedSession | undefined) => {
+    if (moved && pendingRest) {
+      const latestPlan = TrainingPlanRepository.load()
+      if (latestPlan) {
+        TrainingPlanRepository.save(addSessionToPlan(latestPlan, pendingRest.weekId, moved))
+      }
+    }
+    setPendingRest(null)
+    forceRefresh((v) => v + 1)
+  }
+
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
       <Link to="/plan" className="text-xs text-text-muted underline">
@@ -72,7 +94,16 @@ export function DayDetailPage() {
         {date === today && <Badge tone="primary">Aujourd'hui</Badge>}
       </div>
 
-      {session ? (
+      {pendingRest && availability ? (
+        <RestDayMovePrompt
+          cancelledSession={pendingRest}
+          week={week}
+          phase={week.phase}
+          availability={availability}
+          planEndDateExclusive={raceGoal.raceDate}
+          onResolved={handleMoveResolved}
+        />
+      ) : session ? (
         <>
           <Card variant="raised">
             <div className="mb-1 flex items-center justify-between">
@@ -112,6 +143,7 @@ export function DayDetailPage() {
               phase={week.phase}
               availability={availability}
               onSwapped={handleSwap}
+              onConvertedToRest={handleConvertToRest}
             />
           )}
         </>

@@ -70,3 +70,17 @@ export function removeSessionFromPlan(plan: TrainingPlan, sessionId: string): Tr
     }),
   }
 }
+
+/** Adds a brand-new session into a specific week (used when a cancelled
+ * session is moved to a different day rather than dropped) and recomputes
+ * that week's target load. */
+export function addSessionToPlan(plan: TrainingPlan, weekId: string, session: PlannedSession): TrainingPlan {
+  return {
+    ...plan,
+    weeks: plan.weeks.map((week) => {
+      if (week.id !== weekId) return week
+      const sessions = [...week.sessions, session].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+      return { ...week, sessions, targetLoad: estimateWeekLoad(sessions) }
+    }),
+  }
+}
