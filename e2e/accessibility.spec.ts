@@ -37,6 +37,12 @@ async function fillAvailabilityStep(page: Page) {
     await page.getByRole('checkbox', { name: new RegExp(`^${day}$`) }).click()
     await page.getByLabel(`Minutes disponibles le ${day}`).fill('90')
   }
+  // Pool access every day — not just one specific weekday — so a swap to
+  // "Natation" is viable regardless of which real calendar day "today"
+  // happens to be when this suite actually runs.
+  for (const checkbox of await page.getByRole('checkbox', { name: 'Piscine accessible ce jour-là' }).all()) {
+    await checkbox.click()
+  }
   await page.getByRole('button', { name: 'Continuer' }).click()
 }
 
@@ -122,6 +128,28 @@ test.describe('today', () => {
     await page.waitForTimeout(150)
     await scanAxe(page)
   })
+
+  test('swap discipline panel open', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('button', { name: 'Changer de séance' }).click()
+    await scanAxe(page)
+  })
+
+  test('swapping discipline updates the session immediately', async ({ page }) => {
+    await completeOnboarding(page)
+    const beforeText = await page.locator('body').innerText()
+    await page.getByRole('button', { name: 'Changer de séance' }).click()
+    // Pick whichever alternative is offered rather than a fixed discipline
+    // name: today's own (pre-swap) discipline shifts with the real
+    // calendar date this suite happens to run on, so the target that's
+    // actually available (and excluded from the choices) shifts with it.
+    await page.getByRole('radio').first().click()
+    await page.getByRole('button', { name: 'Confirmer' }).click()
+    await page.waitForTimeout(150)
+    const afterText = await page.locator('body').innerText()
+    expect(afterText).not.toBe(beforeText)
+    await scanAxe(page)
+  })
 })
 
 test.describe('session player', () => {
@@ -178,6 +206,23 @@ test.describe('plan', () => {
     await page.getByRole('link', { name: 'Programme' }).click()
     await page.waitForSelector('text=Ton programme')
     await page.getByRole('button', { expanded: false }).first().click()
+    await scanAxe(page)
+  })
+
+  test('shows a visible rest day in the current (expanded) week', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Programme' }).click()
+    await page.waitForSelector('text=Ton programme')
+    await expect(page.getByText('Repos').first()).toBeVisible()
+    await scanAxe(page)
+  })
+
+  test('clicking a day opens its detail preview', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Programme' }).click()
+    await page.waitForSelector('text=Ton programme')
+    await page.locator('a[href^="/day/"]').first().click()
+    await page.waitForURL(/\/day\//)
     await scanAxe(page)
   })
 })

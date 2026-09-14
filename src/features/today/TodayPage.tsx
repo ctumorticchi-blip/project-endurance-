@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ReadinessLevel } from '@/core/history/ReadinessCheck'
+import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
+import { findWeekForDate } from '@/core/training/TrainingPlan'
+import type { PlannedSession } from '@/core/training/PlannedSession'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDecisionRepository'
 import type { AdaptationDecision } from '@/engine/adaptation/AdaptationDecision'
@@ -13,21 +16,14 @@ import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { SwapSessionControl } from '@/shared/components/SwapSessionControl'
+import { DISCIPLINE_LABELS } from '@/shared/discipline'
 import { toISODate } from '@/shared/utils/date'
 import { formatBlock } from '@/shared/utils/workoutBlock'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
 import { CoachInsight } from './CoachInsight'
 import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
-
-const DISCIPLINE_LABELS: Record<string, string> = {
-  swim: 'Natation',
-  bike: 'Vélo',
-  run: 'Course',
-  strength: 'Renforcement',
-  mobility: 'Mobilité',
-  brick: 'Brick',
-}
 
 const PRIORITY_LABELS: Record<string, string> = {
   key: 'Clé',
@@ -43,8 +39,10 @@ const PRIORITY_TONE = {
 
 export function TodayPage() {
   const [adaptation, setAdaptation] = useState<AdaptationDecision | null>(null)
+  const [, forceRefresh] = useState(0)
   const plan = TrainingPlanRepository.load()
   const raceGoal = RaceGoalRepository.load()
+  const availability = AvailabilityRepository.load()
 
   if (!plan || !raceGoal) {
     return <PlaceholderPage title="Aujourd’hui" description="Ton programme n'a pas encore été généré." />
@@ -52,6 +50,7 @@ export function TodayPage() {
 
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
+  const week = findWeekForDate(plan, today)
 
   const handleReadinessSelect = (level: ReadinessLevel) => {
     if (!summary.session) return
@@ -78,6 +77,12 @@ export function TodayPage() {
     TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
 
     setAdaptation(result)
+  }
+
+  const handleSwap = (newSession: PlannedSession) => {
+    TrainingPlanRepository.save(replaceSessionInPlan(plan, newSession))
+    setAdaptation(null)
+    forceRefresh((v) => v + 1)
   }
 
   const activeAdaptation = adaptation && adaptation.type !== 'KEEP' ? adaptation : undefined
@@ -136,6 +141,16 @@ export function TodayPage() {
           </section>
 
           <AdjustAvailabilityToday date={today} onAdjust={handleAvailabilityAdjust} />
+
+          {week && availability && (
+            <SwapSessionControl
+              session={summary.session}
+              week={week}
+              phase={week.phase}
+              availability={availability}
+              onSwapped={handleSwap}
+            />
+          )}
 
           <LinkButton to={`/session/${summary.session.id}`} className="w-full">
             Commencer

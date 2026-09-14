@@ -10,17 +10,10 @@ import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { ProgressBar } from '@/shared/components/ProgressBar'
 import { StatTile } from '@/shared/components/StatTile'
+import { DISCIPLINE_LABELS } from '@/shared/discipline'
+import type { Discipline } from '@/shared/types/common'
 import { formatHoursAndMinutes } from '@/shared/utils/duration'
 import { WeeklyVolumeChart } from './WeeklyVolumeChart'
-
-const DISCIPLINE_LABELS: Record<string, string> = {
-  swim: 'Natation',
-  bike: 'Vélo',
-  run: 'Course',
-  strength: 'Renforcement',
-  mobility: 'Mobilité',
-  brick: 'Brick',
-}
 
 export function ProgressPage() {
   const plan = TrainingPlanRepository.load()
@@ -38,7 +31,7 @@ export function ProgressPage() {
     adaptationDecisions: AdaptationDecisionRepository.loadAll(),
   })
 
-  const disciplineEntries = Object.entries(summary.disciplineMinutes)
+  const disciplineEntries = Object.entries(summary.disciplineMinutes) as [Discipline, number][]
   const maxDisciplineMinutes = Math.max(1, ...disciplineEntries.map(([, minutes]) => minutes))
   const weeklyVolume = buildWeeklyVolumeTrend(CompletedSessionRepository.loadAll(), new Date())
 

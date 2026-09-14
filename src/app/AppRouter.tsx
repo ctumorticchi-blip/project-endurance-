@@ -6,6 +6,7 @@ import { CompletedFeedbackPage } from '@/features/feedback/CompletedFeedbackPage
 import { MissedSessionPage } from '@/features/feedback/MissedSessionPage'
 import { GlossaryPage } from '@/features/glossary/GlossaryPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
+import { DayDetailPage } from '@/features/plan/DayDetailPage'
 import { PlanPage } from '@/features/plan/PlanPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { ProgressPage } from '@/features/progress/ProgressPage'
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="/today" replace /> },
           { path: 'today', element: <TodayPage /> },
           { path: 'plan', element: <PlanPage /> },
+          { path: 'day/:date', element: <DayDetailPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'profile/tests/ftp', element: <FtpTestPage /> },

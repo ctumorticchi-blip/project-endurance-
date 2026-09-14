@@ -5,16 +5,8 @@ import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { DISCIPLINE_LABELS } from '@/shared/discipline'
 import { formatBlock } from '@/shared/utils/workoutBlock'
-
-const DISCIPLINE_LABELS: Record<string, string> = {
-  swim: 'Natation',
-  bike: 'Vélo',
-  run: 'Course',
-  strength: 'Renforcement',
-  mobility: 'Mobilité',
-  brick: 'Brick',
-}
 
 /**
  * The session player shows the whole structure at once instead of running
