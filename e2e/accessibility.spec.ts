@@ -152,6 +152,20 @@ test.describe('today', () => {
     await scanAxe(page)
   })
 
+  test('nudges toward setting nutrition preferences until they are configured', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.waitForSelector('text=Personnalise tes menus nutrition')
+    await scanAxe(page)
+
+    await page.getByRole('link', { name: 'Configurer' }).click()
+    await page.waitForSelector('text=Tes préférences alimentaires')
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Modifier mes préférences')
+
+    await page.getByRole('link', { name: 'Aujourd’hui' }).click()
+    await expect(page.getByText('Personnalise tes menus nutrition')).toHaveCount(0)
+  })
+
   test('adapted state (readiness check-in)', async ({ page }) => {
     await completeOnboarding(page)
     await page.getByRole('button', { name: 'Fatigué' }).click()

@@ -22,6 +22,7 @@ import { toISODate } from '@/shared/utils/date'
 import { formatBlock } from '@/shared/utils/workoutBlock'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
 import { CoachInsight } from './CoachInsight'
+import { NutritionSetupPrompt } from './NutritionSetupPrompt'
 import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
 
@@ -91,6 +92,7 @@ export function TodayPage() {
     <div className="flex flex-col gap-5 px-4 py-6">
       <h1 className="sr-only">Aujourd'hui</h1>
       <RaceCountdown raceLabel={summary.raceLabel} daysUntilRace={summary.daysUntilRace} />
+      <NutritionSetupPrompt />
 
       {summary.session ? (
         <>
