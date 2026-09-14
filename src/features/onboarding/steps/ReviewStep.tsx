@@ -1,4 +1,5 @@
-import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
+import { RUNNING_DISTANCES, type RunningDistance } from '@/sports/running/domain/distance'
+import { TRIATHLON_DISTANCES, type TriathlonDistance } from '@/sports/triathlon/domain/distance'
 import { WEEKDAYS, type Weekday } from '@/shared/types/common'
 import { formatHoursAndMinutes } from '@/shared/utils/duration'
 import type { OnboardingDraft } from '../onboardingState'
@@ -20,6 +21,12 @@ interface ReviewStepProps {
 export function ReviewStep({ draft }: ReviewStepProps) {
   const availableDays = WEEKDAYS.filter((d) => draft.weeklyPattern[d].available)
   const totalMinutes = availableDays.reduce((sum, d) => sum + draft.weeklyPattern[d].minutes, 0)
+  const isRunning = draft.sport === 'running'
+  const distanceLabel = draft.distance
+    ? isRunning
+      ? RUNNING_DISTANCES[draft.distance as RunningDistance].label
+      : TRIATHLON_DISTANCES[draft.distance as TriathlonDistance].label
+    : '—'
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
@@ -34,13 +41,19 @@ export function ReviewStep({ draft }: ReviewStepProps) {
         <div className="flex justify-between border-b border-border pb-2">
           <dt className="text-text-muted">Objectif</dt>
           <dd>
-            {draft.distance ? TRIATHLON_DISTANCES[draft.distance].label : '—'} le {draft.raceDate}
+            {isRunning ? 'Course à pied' : 'Triathlon'} · {distanceLabel} le {draft.raceDate}
           </dd>
         </div>
         <div className="flex justify-between border-b border-border pb-2">
           <dt className="text-text-muted">Niveaux</dt>
           <dd>
-            Nat. {draft.swimLevel} · Vélo {draft.bikeLevel} · Course {draft.runLevel}
+            {isRunning ? (
+              <>Course {draft.runLevel}</>
+            ) : (
+              <>
+                Nat. {draft.swimLevel} · Vélo {draft.bikeLevel} · Course {draft.runLevel}
+              </>
+            )}
           </dd>
         </div>
         <div className="flex justify-between border-b border-border pb-2">

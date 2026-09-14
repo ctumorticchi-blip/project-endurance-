@@ -19,6 +19,9 @@ interface AvailabilityFormProps {
   restDays: Weekday[]
   onChangeDay: (day: Weekday, patch: Partial<DayAvailability>) => void
   onChangeRestDays: (restDays: Weekday[]) => void
+  /** Hidden for a single-discipline running plan, which has no use for
+   * pool access. Defaults to true (triathlon). */
+  showPoolAccess?: boolean
 }
 
 /** The day-by-day availability + explicit rest-day picker, shared between
@@ -31,6 +34,7 @@ export function AvailabilityForm({
   restDays,
   onChangeDay,
   onChangeRestDays,
+  showPoolAccess = true,
 }: AvailabilityFormProps) {
   return (
     <>
@@ -73,7 +77,7 @@ export function AvailabilityForm({
                   </>
                 )}
               </label>
-              {dayState.available && (
+              {dayState.available && showPoolAccess && (
                 <label className="mt-2 ml-9 flex items-center gap-2 text-xs text-text-muted">
                   <input
                     type="checkbox"

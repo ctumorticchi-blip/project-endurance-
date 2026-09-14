@@ -2,7 +2,7 @@ import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import type { Level } from '@/shared/types/common'
-import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
+import type { RunningExperience, TriathlonExperience } from '@/core/athlete/AthleteProfile'
 import type { OnboardingDraft } from '../onboardingState'
 
 const LEVEL_CHOICES: { value: Level; label: string }[] = [
@@ -17,12 +17,20 @@ const TRIATHLON_EXPERIENCE_CHOICES: { value: TriathlonExperience; label: string 
   { value: 'experienced', label: 'Je suis un triathlète expérimenté' },
 ]
 
+const RUNNING_EXPERIENCE_CHOICES: { value: RunningExperience; label: string }[] = [
+  { value: 'first-time-at-distance', label: 'Ce sera ma première fois sur cette distance' },
+  { value: 'some-races', label: 'J’ai déjà couru quelques courses' },
+  { value: 'experienced', label: 'Je suis un coureur expérimenté' },
+]
+
 interface ExperienceStepProps {
   draft: OnboardingDraft
   onChange: (patch: Partial<OnboardingDraft>) => void
 }
 
 export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
+  const isRunning = draft.sport === 'running'
+
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
       <div>
@@ -40,29 +48,43 @@ export function ExperienceStep({ draft, onChange }: ExperienceStepProps) {
         onChange={(value) => onChange({ generalSportExperience: value })}
       />
 
-      <ChoiceGroup
-        legend="Expérience triathlon"
-        name="triathlonExperience"
-        choices={TRIATHLON_EXPERIENCE_CHOICES}
-        value={draft.triathlonExperience}
-        onChange={(value) => onChange({ triathlonExperience: value })}
-      />
+      {isRunning ? (
+        <ChoiceGroup
+          legend="Expérience course à pied"
+          name="runningExperience"
+          choices={RUNNING_EXPERIENCE_CHOICES}
+          value={draft.runningExperience}
+          onChange={(value) => onChange({ runningExperience: value })}
+        />
+      ) : (
+        <ChoiceGroup
+          legend="Expérience triathlon"
+          name="triathlonExperience"
+          choices={TRIATHLON_EXPERIENCE_CHOICES}
+          value={draft.triathlonExperience}
+          onChange={(value) => onChange({ triathlonExperience: value })}
+        />
+      )}
 
-      <ChoiceGroup
-        legend="🏊 Niveau natation"
-        name="swimLevel"
-        choices={LEVEL_CHOICES}
-        value={draft.swimLevel}
-        onChange={(value) => onChange({ swimLevel: value })}
-      />
+      {!isRunning && (
+        <>
+          <ChoiceGroup
+            legend="🏊 Niveau natation"
+            name="swimLevel"
+            choices={LEVEL_CHOICES}
+            value={draft.swimLevel}
+            onChange={(value) => onChange({ swimLevel: value })}
+          />
 
-      <ChoiceGroup
-        legend="🚴 Niveau vélo"
-        name="bikeLevel"
-        choices={LEVEL_CHOICES}
-        value={draft.bikeLevel}
-        onChange={(value) => onChange({ bikeLevel: value })}
-      />
+          <ChoiceGroup
+            legend="🚴 Niveau vélo"
+            name="bikeLevel"
+            choices={LEVEL_CHOICES}
+            value={draft.bikeLevel}
+            onChange={(value) => onChange({ bikeLevel: value })}
+          />
+        </>
+      )}
 
       <ChoiceGroup
         legend="🏃 Niveau course à pied"

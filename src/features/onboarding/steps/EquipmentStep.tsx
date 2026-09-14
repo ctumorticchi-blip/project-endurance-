@@ -10,6 +10,20 @@ interface EquipmentStepProps {
 export function EquipmentStep({ draft, onChange }: EquipmentStepProps) {
   const equipment = draft.equipment
 
+  if (draft.sport === 'running') {
+    return (
+      <div className="flex flex-col gap-5 px-4 py-6">
+        <div>
+          <h1 className="text-lg font-semibold">Ton matériel</h1>
+          <p className="text-sm text-text-muted">
+            La course à pied ne demande pas de matériel spécifique — une bonne paire de
+            chaussures adaptées à ta foulée suffit. Rien à renseigner ici.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
       <div>

@@ -91,22 +91,25 @@ export function MetricsStep({ draft, onChange }: MetricsStepProps) {
         (v) => setMetric({ thresholdHeartRate: v }),
       )}
 
-      {numberField(
-        'FTP vélo (watts)',
-        "La puissance moyenne que tu peux maintenir pendant environ une heure à vélo. Se mesure avec un capteur de puissance ou un test FTP (disponible plus tard dans ton profil).",
-        metrics.ftpWatts,
-        (v) => setMetric({ ftpWatts: v }),
-      )}
+      {draft.sport === 'triathlon' &&
+        numberField(
+          'FTP vélo (watts)',
+          "La puissance moyenne que tu peux maintenir pendant environ une heure à vélo. Se mesure avec un capteur de puissance ou un test FTP (disponible plus tard dans ton profil).",
+          metrics.ftpWatts,
+          (v) => setMetric({ ftpWatts: v }),
+        )}
 
-      <MinSecField
-        legend="CSS natation"
-        idPrefix="onboarding-css"
-        minutes={cssMin}
-        seconds={cssSec}
-        onMinutesChange={(v) => updateCss(v, cssSec)}
-        onSecondsChange={(v) => updateCss(cssMin, v)}
-        hint="Ton allure de nage soutenable indéfiniment, par 100m. Déterminée par un test 400m + 200m (disponible plus tard dans ton profil) si tu ne la connais pas déjà."
-      />
+      {draft.sport === 'triathlon' && (
+        <MinSecField
+          legend="CSS natation"
+          idPrefix="onboarding-css"
+          minutes={cssMin}
+          seconds={cssSec}
+          onMinutesChange={(v) => updateCss(v, cssSec)}
+          onSecondsChange={(v) => updateCss(cssMin, v)}
+          hint="Ton allure de nage soutenable indéfiniment, par 100m. Déterminée par un test 400m + 200m (disponible plus tard dans ton profil) si tu ne la connais pas déjà."
+        />
+      )}
 
       <MinSecField
         legend="Allure seuil course"
@@ -144,7 +147,9 @@ export function MetricsStep({ draft, onChange }: MetricsStepProps) {
 
       {numberField(
         'Poids (kg)',
-        'Sert à calculer tes repères nutritionnels et ta puissance relative (W/kg) si ta FTP est connue.',
+        draft.sport === 'triathlon'
+          ? 'Sert à calculer tes repères nutritionnels et ta puissance relative (W/kg) si ta FTP est connue.'
+          : 'Sert à calculer tes repères nutritionnels (glucides/hydratation par heure).',
         draft.weightKg,
         (v) => onChange({ weightKg: v }),
       )}

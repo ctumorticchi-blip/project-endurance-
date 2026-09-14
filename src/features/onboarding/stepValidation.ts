@@ -7,13 +7,10 @@ export function isStepValid(step: OnboardingStepId, draft: OnboardingDraft): boo
     case 'race-goal':
       return Boolean(draft.distance && draft.raceDate)
     case 'experience':
-      return Boolean(
-        draft.generalSportExperience &&
-          draft.triathlonExperience &&
-          draft.swimLevel &&
-          draft.bikeLevel &&
-          draft.runLevel,
-      )
+      if (!draft.generalSportExperience) return false
+      return draft.sport === 'triathlon'
+        ? Boolean(draft.triathlonExperience && draft.swimLevel && draft.bikeLevel && draft.runLevel)
+        : Boolean(draft.runningExperience && draft.runLevel)
     case 'equipment':
       return true
     case 'metrics':

@@ -1,22 +1,27 @@
-import type { BiologicalSex, Equipment, KnownMetrics } from '@/core/athlete/AthleteProfile'
+import type { BiologicalSex, Equipment, KnownMetrics, RunningExperience, Sport, TriathlonExperience } from '@/core/athlete/AthleteProfile'
 import type { AvailabilityException, WeeklyPattern } from '@/core/availability/Availability'
 import { createEmptyWeeklyPattern } from '@/core/availability/Availability'
-import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
+import type { RunningDistance } from '@/sports/running/domain/distance'
 import type { TriathlonDistance } from '@/sports/triathlon/domain/distance'
 import type { DateISO, Level, Weekday } from '@/shared/types/common'
 
 /**
  * One draft object accumulated across onboarding steps, later split into
  * AthleteProfile / RaceGoal / Availability on submit. Kept flat and
- * partial so each step only needs to know its own slice.
+ * partial so each step only needs to know its own slice. A single step
+ * array is shared by both sports (see `ONBOARDING_STEPS`) — each step's
+ * rendered content branches internally on `sport` instead of the flow
+ * adding/removing steps, so `stepIndex` never needs to shift meaning.
  */
 export interface OnboardingDraft {
-  distance?: TriathlonDistance
+  sport: Sport
+  distance?: TriathlonDistance | RunningDistance
   raceDate?: DateISO
   raceName?: string
 
   generalSportExperience?: Level
   triathlonExperience?: TriathlonExperience
+  runningExperience?: RunningExperience
   swimLevel?: Level
   bikeLevel?: Level
   runLevel?: Level
@@ -50,6 +55,7 @@ export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]
 
 export function createInitialDraft(): OnboardingDraft {
   return {
+    sport: 'triathlon',
     equipment: { hasPoolAccess: false, hasBike: true, hasHomeTrainer: false },
     knownMetrics: {},
     weeklyPattern: createEmptyWeeklyPattern(),
@@ -58,13 +64,17 @@ export function createInitialDraft(): OnboardingDraft {
   }
 }
 
+function hasCompleteExperience(draft: OnboardingDraft): boolean {
+  if (!draft.generalSportExperience) return false
+  return draft.sport === 'triathlon'
+    ? Boolean(draft.triathlonExperience && draft.swimLevel && draft.bikeLevel && draft.runLevel)
+    : Boolean(draft.runningExperience && draft.runLevel)
+}
+
 export function isDraftCompleteEnoughToSubmit(draft: OnboardingDraft): boolean {
   const hasGoal = Boolean(draft.distance && draft.raceDate)
-  const hasExperience = Boolean(
-    draft.generalSportExperience && draft.triathlonExperience && draft.swimLevel && draft.bikeLevel && draft.runLevel,
-  )
   const hasAtLeastOneAvailableDay = Object.values(draft.weeklyPattern).some(
     (d) => d.available && d.minutes > 0,
   )
-  return hasGoal && hasExperience && hasAtLeastOneAvailableDay
+  return hasGoal && hasCompleteExperience(draft) && hasAtLeastOneAvailableDay
 }

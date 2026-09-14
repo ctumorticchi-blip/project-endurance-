@@ -32,6 +32,7 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
         restDays={draft.restDays}
         onChangeDay={setDay}
         onChangeRestDays={(restDays) => onChange({ restDays })}
+        showPoolAccess={draft.sport === 'triathlon'}
       />
     </div>
   )
