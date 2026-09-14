@@ -35,13 +35,28 @@ export interface PlannedSession {
   objective: string
   blocks: WorkoutBlock[]
   estimatedDurationMin: number
+  /**
+   * Duration and blocks exactly as generated, before any same-day
+   * adaptation (readiness check-in, "less time today"). Every such
+   * decision is computed relative to this baseline rather than the
+   * current `estimatedDurationMin`/`blocks` — otherwise a sequence of
+   * check-ins (tired → normal → tired) would compound instead of each
+   * being an independent, fresh decision from the actual plan.
+   */
+  plannedDurationMin: number
+  plannedBlocks: WorkoutBlock[]
   priority: SessionPriority
   date: DateISO
   weekId: string
 }
 
 export function createPlannedSession(
-  input: Omit<PlannedSession, 'id'>,
+  input: Omit<PlannedSession, 'id' | 'plannedDurationMin' | 'plannedBlocks'>,
 ): PlannedSession {
-  return { ...input, id: crypto.randomUUID() }
+  return {
+    ...input,
+    id: crypto.randomUUID(),
+    plannedDurationMin: input.estimatedDurationMin,
+    plannedBlocks: input.blocks,
+  }
 }

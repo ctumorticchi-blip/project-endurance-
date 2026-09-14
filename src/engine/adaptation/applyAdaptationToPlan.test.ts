@@ -54,7 +54,7 @@ describe('applyDurationAdaptation', () => {
     expect(updated.blocks[0]?.durationSec).toBe(session.blocks[0]?.durationSec)
   })
 
-  it('is a no-op when nothing actually changed (KEEP)', () => {
+  it('leaves values unchanged when a KEEP matches the session as-is', () => {
     const session = buildSession()
     const decision: AdaptationDecision = {
       type: 'KEEP',
@@ -64,7 +64,36 @@ describe('applyDurationAdaptation', () => {
       after: { estimatedDurationMin: 60 },
       explanation: 'test',
     }
-    expect(applyDurationAdaptation(session, decision)).toBe(session)
+    expect(applyDurationAdaptation(session, decision)).toStrictEqual(session)
+  })
+
+  it('restores the plan baseline on KEEP even when the session was already reduced', () => {
+    // Simulates: "tired" reduced the session, then a later "normal"
+    // check-in produces a KEEP whose before/after are the *plan's*
+    // baseline (60) — applying it must undo the earlier reduction, not
+    // leave the session at its currently-reduced duration.
+    const session = buildSession()
+    const reduced = applyDurationAdaptation(session, {
+      type: 'REDUCE',
+      sessionId: session.id,
+      reasons: ['ELEVATED_FATIGUE'],
+      before: { estimatedDurationMin: 60 },
+      after: { estimatedDurationMin: 30 },
+      explanation: 'test',
+    })
+    expect(reduced.estimatedDurationMin).toBe(30)
+
+    const restored = applyDurationAdaptation(reduced, {
+      type: 'KEEP',
+      sessionId: session.id,
+      reasons: ['NO_SIGNAL'],
+      before: { estimatedDurationMin: 60 },
+      after: { estimatedDurationMin: 60 },
+      explanation: 'test',
+    })
+    expect(restored.estimatedDurationMin).toBe(60)
+    expect(restored.blocks[0]?.durationSec).toBe(session.blocks[0]?.durationSec)
+    expect(restored.blocks[1]?.durationSec).toBe(session.blocks[1]?.durationSec)
   })
 })
 

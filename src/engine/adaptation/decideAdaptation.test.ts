@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSessionFeedback, type SessionFeedback } from '@/core/history/SessionFeedback'
 import { createPlannedSession, type PlannedSession, type SessionPriority } from '@/core/training/PlannedSession'
+import { applyDurationAdaptation } from './applyAdaptationToPlan'
 import { decideAdaptation, decideAvailabilityConstraint } from './decideAdaptation'
 
 function session(priority: SessionPriority = 'key', estimatedDurationMin = 60): PlannedSession {
@@ -86,6 +87,23 @@ describe('decideAdaptation — upcoming session (readiness/RPE driven)', () => {
       recentFeedback: [feedbackWithRpe(2), feedbackWithRpe(3)],
     })
     expect(result.type).toBe('REDUCE')
+  })
+
+  it('does not compound across repeated check-ins on the same session (tired → normal → tired)', () => {
+    const first = decideAdaptation({ session: session('key', 60), readiness: 'tired', recentFeedback: [] })
+    const afterFirst = applyDurationAdaptation(session('key', 60), first)
+    expect(afterFirst.estimatedDurationMin).toBeLessThan(60)
+
+    // "Normal" has no signal, so it should restore the original plan.
+    const second = decideAdaptation({ session: afterFirst, readiness: 'normal', recentFeedback: [] })
+    const afterSecond = applyDurationAdaptation(afterFirst, second)
+    expect(afterSecond.estimatedDurationMin).toBe(60)
+
+    // Checking "tired" again from the restored session must land on the
+    // exact same reduced duration as the very first tired check-in —
+    // never smaller.
+    const third = decideAdaptation({ session: afterSecond, readiness: 'tired', recentFeedback: [] })
+    expect(third.after.estimatedDurationMin).toBe(first.after.estimatedDurationMin)
   })
 })
 
@@ -210,5 +228,16 @@ describe('decideAvailabilityConstraint', () => {
   it('never reduces below the minimum viable session length', () => {
     const result = decideAvailabilityConstraint(session('key', 60), 2)
     expect(result.after.estimatedDurationMin).toBeGreaterThan(0)
+  })
+
+  it('does not compound across repeated same-day availability adjustments', () => {
+    const first = decideAvailabilityConstraint(session('key', 60), 40)
+    const afterFirst = applyDurationAdaptation(session('key', 60), first)
+    expect(afterFirst.estimatedDurationMin).toBe(40)
+
+    // Re-declaring the same 40 minutes on the already-reduced session must
+    // land on 40 again, not scale 40 down further.
+    const second = decideAvailabilityConstraint(afterFirst, 40)
+    expect(second.after.estimatedDurationMin).toBe(40)
   })
 })

@@ -67,10 +67,12 @@ export function TodayPage() {
     const result = decideAdaptation({ session: summary.session, readiness: level, recentFeedback })
     AdaptationDecisionRepository.append(result)
 
-    if (result.type !== 'KEEP') {
-      const updatedSession = applyDurationAdaptation(summary.session, result)
-      TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
-    }
+    // Always apply, even for KEEP: KEEP's before/after are the plan's
+    // baseline, which restores the session when an earlier check-in on the
+    // same day had reduced or increased it (otherwise "tired" then
+    // "normal" would leave the reduction in place instead of resetting it).
+    const updatedSession = applyDurationAdaptation(summary.session, result)
+    TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
 
     setAdaptation(result)
   }
@@ -80,10 +82,8 @@ export function TodayPage() {
     const result = decideAvailabilityConstraint(summary.session, availableMinutes)
     AdaptationDecisionRepository.append(result)
 
-    if (result.type !== 'KEEP') {
-      const updatedSession = applyDurationAdaptation(summary.session, result)
-      TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
-    }
+    const updatedSession = applyDurationAdaptation(summary.session, result)
+    TrainingPlanRepository.save(replaceSessionInPlan(plan, updatedSession))
 
     setAdaptation(result)
   }

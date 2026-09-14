@@ -21,15 +21,21 @@ export function applyDurationAdaptation(
   const after = decision.after.estimatedDurationMin
   const newDate = decision.after.date
 
-  if (before === after && !newDate) return session
-
+  // No early-exit on before === after: a KEEP decision's before/after are
+  // both the plan's baseline, which can still differ from the session's
+  // *current* (already-adapted) values — this is precisely what restores
+  // the plan when an earlier reduction no longer applies (brief: a "no
+  // signal" check-in must reset, not just skip touching the session).
   const ratio = before > 0 ? after / before : 1
 
   return {
     ...session,
     estimatedDurationMin: after,
     date: newDate ?? session.date,
-    blocks: session.blocks.map((block) => ({
+    // Always scaled from the pristine plannedBlocks, not the current
+    // (possibly already-scaled) blocks — otherwise repeated adaptations
+    // would compound the same way the bare duration used to.
+    blocks: session.plannedBlocks.map((block) => ({
       ...block,
       durationSec:
         block.durationSec !== undefined

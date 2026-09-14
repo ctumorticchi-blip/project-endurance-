@@ -133,7 +133,10 @@ function decideUpcomingSession(
   readiness: ReadinessLevel | undefined,
   recentFeedback: SessionFeedback[],
 ): AdaptationDecision {
-  const before: AdaptationSnapshot = { estimatedDurationMin: session.estimatedDurationMin }
+  // Always the original plan, never the currently-displayed value: this is
+  // what makes a fresh check-in (tired → normal → tired) reset instead of
+  // compounding on top of the previous one.
+  const before: AdaptationSnapshot = { estimatedDurationMin: session.plannedDurationMin }
   const avgRpe = averageRpe(recentFeedback)
 
   if (readiness === 'tired') {
@@ -224,9 +227,12 @@ export function decideAvailabilityConstraint(
   session: PlannedSession,
   availableMinutes: number,
 ): AdaptationDecision {
-  const before: AdaptationSnapshot = { estimatedDurationMin: session.estimatedDurationMin }
+  // Same reasoning as decideUpcomingSession: compare against the original
+  // plan, not a possibly-already-reduced current value, so re-adjusting
+  // "how much time do I have today" resets rather than compounds.
+  const before: AdaptationSnapshot = { estimatedDurationMin: session.plannedDurationMin }
 
-  if (availableMinutes >= session.estimatedDurationMin) {
+  if (availableMinutes >= session.plannedDurationMin) {
     return decision(
       session,
       'KEEP',
