@@ -6,21 +6,20 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone
 }
 
-// Every tinted tone blends its color at 8% over its background rather than
-// using a solid "muted" swatch — a solid mid-tone like the old
-// bg-primary-muted reads as light enough to fail WCAG AA contrast against
-// the same-hue text (measured 4.42:1, needs 4.5:1). 8%, not 15%: a Badge
-// renders on four different backgrounds depending on which Card it sits
-// in (background/surface/surface-muted/surface-raised), and at 15% the
-// "danger" tone only clears 4.5:1 on the darkest of those — it measured
-// 4.23:1 on surface-raised via a real axe-core scan. 8% keeps every tone
-// above 4.5:1 on all four (worst case 4.68:1, on danger/surface-raised).
+// Every tinted tone blends its color over its background rather than using
+// a solid "muted" swatch — see docs/design-system.md for why the alpha is
+// re-derived (not just re-verified) whenever a base color or a surface
+// tone changes: a Badge renders on four different backgrounds depending on
+// which Card it sits in, so the alpha must clear 4.5:1 against all four,
+// not just the one it happened to be tuned against. 6% keeps every tone
+// above 4.5:1 on all four surfaces of the current (Garmin-inspired) navy
+// palette (worst case 4.61:1, on primary/surface-raised).
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral: 'bg-surface-muted text-text-muted',
-  primary: 'bg-primary/8 text-primary',
-  accent: 'bg-accent/8 text-accent',
-  warning: 'bg-warning/8 text-warning',
-  danger: 'bg-danger/8 text-danger',
+  primary: 'bg-primary/6 text-primary',
+  accent: 'bg-accent/6 text-accent',
+  warning: 'bg-warning/6 text-warning',
+  danger: 'bg-danger/6 text-danger',
 }
 
 /** Small inline label — priority, phase, discipline, zone — never

@@ -15,21 +15,23 @@ export const brand = {
     'Un coach numérique personnel pour sportifs d’endurance : programme adaptatif, explicable, et centré sur ta vraie vie.',
   domainVersion: 1,
   colors: {
-    // Premium / sporty / calm / precise.
-    background: '#0B0F14',
-    surface: '#121821',
-    surfaceMuted: '#1A222E',
-    surfaceRaised: '#1B2330',
-    primary: '#3DDC97',
-    primaryMuted: '#245C43',
-    accent: '#4EA1FF',
-    text: '#F4F7FA',
+    // Sporty / precise, Garmin-inspired: navy-blue ground, blue as the
+    // primary brand/action color instead of green. See
+    // docs/design-system.md for the contrast math behind every value here.
+    background: '#0D1B2A',
+    surface: '#142437',
+    surfaceMuted: '#1C2E44',
+    surfaceRaised: '#1D2F46',
+    primary: '#4EA1FF',
+    primaryMuted: '#1E5A96',
+    accent: '#3DDC97',
+    text: '#F2F6F9',
     textMuted: '#9AA7B4',
-    textFaint: '#868E98',
-    border: '#26303C',
-    borderStrong: '#37455A',
+    textFaint: '#9098A0',
+    border: '#2B3F56',
+    borderStrong: '#3D5A78',
     warning: '#F2B84B',
-    danger: '#F2665C',
+    danger: '#F5776D',
   },
   /**
    * A deliberate, network-independent type stack: a humanist sans for
@@ -58,7 +60,7 @@ export const brand = {
   },
   metadata: {
     titleSuffix: ' · Project Endurance',
-    themeColor: '#0B0F14',
+    themeColor: '#0D1B2A',
   },
 } as const
 

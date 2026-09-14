@@ -13,23 +13,38 @@ Deux emplacements, gardés synchronisés à la main :
 - `src/index.css` (`@theme`) — les mêmes valeurs en variables CSS/utilitaires
   Tailwind, puisque Tailwind ne peut pas importer un module TS au build.
 
-Palette : fond très sombre (`#0B0F14`), surfaces légèrement plus claires
-par paliers (`surface` → `surface-muted` → `surface-raised`), un vert
-primaire (`#3DDC97`) et un bleu accent (`#4EA1FF`), plus warning/danger.
+Palette (revue après M1, retour "style sportif" inspiration Garmin) : fond
+bleu-marine très sombre (`#0D1B2A`), surfaces légèrement plus claires par
+paliers de la même teinte (`surface` → `surface-muted` → `surface-raised`),
+un bleu primaire (`#4EA1FF`, la couleur de marque/action — anciennement
+l'accent) et un vert accent (`#3DDC97`, anciennement primaire — les deux
+tons ont simplement échangé de rôle, leurs valeurs de contraste déjà
+vérifiées restent valables), plus warning/danger (`danger` reteinté plus
+clair, `#F2665C` → `#F5776D`, pour retenir 4.5:1 sur la nouvelle palette).
 Texte en trois intensités (`text` / `text-muted` / `text-faint`) — jamais
 d'information critique portée uniquement par la couleur.
 
-**Règle de contraste** : chaque `Badge` teinté (`primary`/`accent`/
-`warning`/`danger`) mélange sa couleur à 8 % au-dessus de son fond. Un
+**Toute la palette est revérifiée à chaque changement, pas seulement les
+valeurs qu'on modifie explicitement** : changer le fond change le
+contraste de tout ce qui est dessiné dessus. Avant de fixer les valeurs
+ci-dessus, un script a recalculé le ratio WCAG de chaque paire texte/fond
+(`text`/`text-muted`/`text-faint`/`primary`/`accent`/`warning`/`danger` ×
+les quatre fonds) et de chaque bouton (couleur du label sur le fond du
+bouton) — c'est ce qui a fait remonter `danger` de `#F2665C` à `#F5776D`
+(l'ancienne valeur ne tenait plus 4.5:1 sur les nouvelles surfaces plus
+claires) et fait passer l'alpha des `Badge` de 8 % à 6 %.
+
+**Règle de contraste (Badge)** : chaque `Badge` teinté (`primary`/`accent`/
+`warning`/`danger`) mélange sa couleur à 6 % au-dessus de son fond. Un
 `Badge` n'apparaît jamais sur un seul fond : selon la `Card` qui l'entoure,
-c'est `background`, `surface`, `surface-muted` ou `surface-raised`. Un
-premier réglage à 15 % ne tenait le ratio WCAG AA (4.5:1) que sur le fond
-de page le plus sombre — la tonalité `danger` mesurait 4.23:1 sur
-`surface-raised` via un scan axe-core réel (un `Badge tone="danger"`
-imbriqué dans une `Card variant="raised"`), en dessous du seuil. 8 %
-garantit 4.5:1 sur les quatre fonds à la fois (pire cas 4.68:1). Ne jamais
-recalibrer une seule tonalité isolément : vérifier les quatre fonds pour
-les quatre tonalités avant de changer l'alpha.
+c'est `background`, `surface`, `surface-muted` ou `surface-raised` — les
+quatre doivent tenir 4.5:1. Ce pourcentage n'est pas une constante figée :
+il a déjà dû être recalculé deux fois (15 % → 8 % en M1 quand `danger`
+échouait sur `surface-raised`, 8 % → 6 % avec la nouvelle palette Garmin)
+et devra l'être à nouveau si une des quatre couleurs de fond ou une des
+quatre tonalités change. Ne jamais recalibrer une seule tonalité
+isolément : vérifier les quatre fonds pour les quatre tonalités avant de
+changer l'alpha.
 
 Ne jamais imbriquer un `Badge` teinté à l'intérieur d'un autre conteneur
 déjà teinté de la même couleur (ex. une bannière `bg-accent/10`) : les deux
@@ -39,12 +54,11 @@ réglage 15 % — trouvé et corrigé via un scan axe-core réel, pas en lecture
 de code). Dans ce contexte, utiliser `tone="neutral"` pour le badge
 imbriqué.
 
-`text-faint` a été recalculé (`#5C6774` → `#868E98`) après un scan axe-core
-sur le Session Player : contre les quatre fonds de l'app (`background`,
-`surface`, `surface-muted`, `surface-raised`), l'ancienne valeur ne
-descendait jamais sous 2.74:1. La nouvelle valeur tient 4.5:1 (avec marge)
-sur les quatre à la fois — un token de texte doit rester lisible partout où
-il est utilisé, pas seulement dans le contexte où il a été choisi au départ.
+`text-faint` a été recalculé une première fois (`#5C6774` → `#868E98`)
+après un scan axe-core sur le Session Player pendant M1, puis une seconde
+fois (`#868E98` → `#9098A0`) pour la palette Garmin — même raison à chaque
+fois : un token de texte doit rester lisible sur les quatre fonds de
+l'app, pas seulement dans le contexte où il a été choisi au départ.
 
 Typographie : une pile de polices système déclarée volontairement
 (`Inter, ui-sans-serif, system-ui, ...`) — pas de webfont chargée à
