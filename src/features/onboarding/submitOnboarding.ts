@@ -49,7 +49,7 @@ export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string
   const availability: Availability = {
     weeklyPattern: draft.weeklyPattern,
     exceptions: draft.exceptions,
-    desiredRestDaysPerWeek: draft.desiredRestDaysPerWeek,
+    restDays: draft.restDays,
   }
 
   AthleteProfileRepository.save(profile)

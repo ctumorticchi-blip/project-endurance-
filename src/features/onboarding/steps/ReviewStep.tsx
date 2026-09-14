@@ -55,10 +55,8 @@ export function ReviewStep({ draft }: ReviewStepProps) {
           <dd>{availableDays.map((d) => WEEKDAY_LABELS[d]).join(', ') || '—'}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-text-muted">Jours de repos souhaités</dt>
-          <dd>
-            {draft.desiredRestDaysPerWeek}/semaine
-          </dd>
+          <dt className="text-text-muted">Jour(s) de repos fixe(s)</dt>
+          <dd>{draft.restDays.map((d) => WEEKDAY_LABELS[d]).join(', ') || '—'}</dd>
         </div>
       </dl>
     </div>

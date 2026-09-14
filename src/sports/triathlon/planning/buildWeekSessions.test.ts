@@ -77,6 +77,32 @@ describe('buildWeekSessions', () => {
       const scheduledDates = new Set(sessions.map((s) => s.date))
       expect(scheduledDates.size).toBeLessThanOrEqual(4)
     })
+
+    it('an explicit rest day that is also marked unavailable produces exactly one rest day, not two', () => {
+      // The exact reported scenario: Sunday unavailable in the weekly
+      // pattern, and separately chosen as the explicit rest day. Before
+      // `restDays` existed, an independently-requested rest-day *count*
+      // could remove a second day on top of Sunday's own unavailability.
+      const availability: Availability = {
+        ...availabilityAllDays(90),
+        weeklyPattern: {
+          ...availabilityAllDays(90).weeklyPattern,
+          sunday: { available: false, minutes: 0, poolAccess: false },
+        },
+        restDays: ['sunday'],
+      }
+      const sessions = build(availability)
+      const scheduledDates = new Set(sessions.map((s) => s.date))
+      // 2026-01-05 is a Monday, so this week's Sunday is 2026-01-11.
+      expect(scheduledDates.has('2026-01-11')).toBe(false)
+      expect(scheduledDates.size).toBe(6)
+    })
+
+    it('an explicit rest day is never scheduled even when it has plenty of declared minutes', () => {
+      const availability: Availability = { ...availabilityAllDays(120), restDays: ['wednesday'] }
+      const sessions = build(availability)
+      expect(sessions.some((s) => s.date === '2026-01-07')).toBe(false)
+    })
   })
 
   describe('progression across weeks of the same phase', () => {

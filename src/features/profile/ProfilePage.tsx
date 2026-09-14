@@ -110,6 +110,9 @@ export function ProfilePage() {
         {biometricsParts.length > 0 && (
           <p className="mt-1 text-sm text-text-muted">{biometricsParts.join(' · ')}</p>
         )}
+        <Link to="/profile/availability" className="mt-2 inline-block text-xs font-medium text-accent underline">
+          Modifier mes disponibilités
+        </Link>
       </div>
 
       {powerToWeight && (

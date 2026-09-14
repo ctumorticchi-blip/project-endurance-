@@ -5,8 +5,10 @@ import {
   getAvailableMinutes,
   hasPoolAccess,
   resolveDesiredRestDays,
+  resolveRestDates,
   type Availability,
 } from './Availability'
+import { addDays } from '@/shared/utils/date'
 
 function buildAvailability(): Availability {
   const pattern = createEmptyWeeklyPattern()
@@ -79,5 +81,38 @@ describe('resolveDesiredRestDays', () => {
 
   it('never goes below the minimum even if the athlete asks for zero', () => {
     expect(resolveDesiredRestDays({ ...buildAvailability(), desiredRestDaysPerWeek: 0 })).toBe(1)
+  })
+})
+
+describe('resolveRestDates', () => {
+  const weekStart = '2026-06-01' // a Monday
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+
+  it('returns an empty set when no explicit rest day is configured (old data)', () => {
+    expect(resolveRestDates(buildAvailability(), weekDates)).toEqual(new Set())
+  })
+
+  it('resolves a single chosen weekday to its date within the week', () => {
+    const availability: Availability = { ...buildAvailability(), restDays: ['sunday'] }
+    expect(resolveRestDates(availability, weekDates)).toEqual(new Set(['2026-06-07']))
+  })
+
+  it('resolves multiple chosen weekdays', () => {
+    const availability: Availability = { ...buildAvailability(), restDays: ['wednesday', 'sunday'] }
+    expect(resolveRestDates(availability, weekDates)).toEqual(new Set(['2026-06-03', '2026-06-07']))
+  })
+
+  it('returns an empty set when the chosen weekday does not fall within this (shortened) week', () => {
+    const shortWeek = weekDates.slice(0, 3) // Monday-Wednesday only
+    const availability: Availability = { ...buildAvailability(), restDays: ['sunday'] }
+    expect(resolveRestDates(availability, shortWeek)).toEqual(new Set())
+  })
+
+  it('a chosen rest day resolves to its date regardless of that day\'s own declared availability', () => {
+    // Sunday marked unavailable in the weekly pattern AND separately chosen
+    // as the explicit rest day — the exact scenario reported as producing
+    // two rest days instead of one.
+    const availability: Availability = { ...buildAvailability(), restDays: ['sunday'] }
+    expect(resolveRestDates(availability, weekDates).size).toBe(1)
   })
 })

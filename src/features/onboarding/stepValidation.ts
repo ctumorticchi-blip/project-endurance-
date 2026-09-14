@@ -19,7 +19,10 @@ export function isStepValid(step: OnboardingStepId, draft: OnboardingDraft): boo
     case 'metrics':
       return true
     case 'availability':
-      return Object.values(draft.weeklyPattern).some((d) => d.available && d.minutes > 0)
+      return (
+        Object.values(draft.weeklyPattern).some((d) => d.available && d.minutes > 0) &&
+        draft.restDays.length > 0
+      )
     case 'review':
       return true
   }

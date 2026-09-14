@@ -30,16 +30,45 @@ export const MIN_REST_DAYS_PER_WEEK = 1
 export interface Availability {
   weeklyPattern: WeeklyPattern
   exceptions: AvailabilityException[]
-  /** How many rest days per week the athlete asked for. Optional — absent
-   * for availability records saved before this preference existed, and
-   * treated the same as not having answered. The generator never
-   * schedules more than 7 - max(this, MIN_REST_DAYS_PER_WEEK) training
-   * days in a week, even if more days have available minutes. */
+  /**
+   * @deprecated Superseded by `restDays` (an explicit choice of which
+   * weekday(s) are rest days). Kept only so availability records saved
+   * before that existed still resolve to a sensible rest-day count — see
+   * `resolveDesiredRestDays`. New code should read/write `restDays`.
+   */
   desiredRestDaysPerWeek?: number
+  /**
+   * Weekday(s) the athlete explicitly wants kept as rest days, always —
+   * never scheduled a session there, even if that day is also marked
+   * "available" with plenty of time. Takes priority over the old
+   * count-based heuristic below. Empty/absent for records saved before
+   * this existed, in which case the generator falls back to picking
+   * whichever day(s) have the least available time (brief feedback: this
+   * ambiguity between "N rest days" and "which days" is exactly what
+   * caused an already-unavailable day to be double-counted against a
+   * separately-requested rest day).
+   */
+  restDays?: Weekday[]
 }
 
+/** Legacy fallback only — used when `restDays` is empty (old data, or a
+ * week where none of the chosen weekdays fall within its 7 dates). */
 export function resolveDesiredRestDays(availability: Availability): number {
   return Math.max(MIN_REST_DAYS_PER_WEEK, availability.desiredRestDaysPerWeek ?? MIN_REST_DAYS_PER_WEEK)
+}
+
+/**
+ * Resolves `restDays` (recurring weekdays) to the actual calendar dates
+ * that fall within `weekDates` for one specific week. Returns an empty set
+ * when no explicit rest day is configured, or none of the chosen weekdays
+ * land in this particular (possibly shortened, e.g. the last week before
+ * the race) date range — the caller then falls back to
+ * `resolveDesiredRestDays`.
+ */
+export function resolveRestDates(availability: Availability, weekDates: DateISO[]): Set<DateISO> {
+  if (!availability.restDays || availability.restDays.length === 0) return new Set()
+  const restWeekdays = new Set(availability.restDays)
+  return new Set(weekDates.filter((date) => restWeekdays.has(weekdayOf(date))))
 }
 
 export function createEmptyWeeklyPattern(): WeeklyPattern {

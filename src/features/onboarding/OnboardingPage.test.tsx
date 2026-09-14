@@ -58,8 +58,9 @@ describe('OnboardingPage', () => {
     // Step 4: metrics (optional)
     await user.click(screen.getByRole('button', { name: 'Continuer' }))
 
-    // Step 5: availability — need at least one day
-    const saturdayCheckbox = screen.getByRole('checkbox', { name: /Samedi/ })
+    // Step 5: availability — need at least one rest day and one available day
+    await user.click(screen.getByRole('checkbox', { name: 'Repos le Dimanche' }))
+    const saturdayCheckbox = screen.getByRole('checkbox', { name: /^Samedi$/ })
     await user.click(saturdayCheckbox)
     const minutesInput = screen.getByLabelText('Minutes disponibles le Samedi')
     await user.clear(minutesInput)

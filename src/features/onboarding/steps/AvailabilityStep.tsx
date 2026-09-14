@@ -1,18 +1,6 @@
-import { Card } from '@/shared/components/Card'
-import { Field } from '@/shared/components/Field'
-import { INPUT_CLASSES } from '@/shared/components/inputStyles'
-import { WEEKDAYS, type Weekday } from '@/shared/types/common'
+import { AvailabilityForm } from '@/features/availability/AvailabilityForm'
+import type { Weekday } from '@/shared/types/common'
 import type { OnboardingDraft } from '../onboardingState'
-
-const WEEKDAY_LABELS: Record<Weekday, string> = {
-  monday: 'Lundi',
-  tuesday: 'Mardi',
-  wednesday: 'Mercredi',
-  thursday: 'Jeudi',
-  friday: 'Vendredi',
-  saturday: 'Samedi',
-  sunday: 'Dimanche',
-}
 
 interface AvailabilityStepProps {
   draft: OnboardingDraft
@@ -35,66 +23,16 @@ export function AvailabilityStep({ draft, onChange }: AvailabilityStepProps) {
         <h1 className="text-lg font-semibold">Ta semaine type</h1>
         <p className="text-sm text-text-muted">
           Indique tes jours disponibles et le temps que tu peux y consacrer. Tu pourras signaler
-          des exceptions ponctuelles plus tard.
+          des exceptions ponctuelles plus tard, et revenir modifier tout ceci depuis ton profil.
         </p>
       </div>
 
-      <Field
-        label="Jours de repos souhaités par semaine"
-        hint="Le repos fait partie de l'entraînement. Un jour de repos est toujours conservé dans ton programme, même si tu indiques 0 ou que tous tes jours sont disponibles."
-      >
-        <input
-          type="number"
-          min={0}
-          max={6}
-          value={draft.desiredRestDaysPerWeek}
-          onChange={(e) => onChange({ desiredRestDaysPerWeek: Number(e.target.value) || 0 })}
-          className={`w-20 ${INPUT_CLASSES}`}
-        />
-      </Field>
-
-      <ul className="flex flex-col gap-3">
-        {WEEKDAYS.map((day) => {
-          const dayState = draft.weeklyPattern[day]
-          return (
-            <Card key={day} as="li" className="py-3">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={dayState.available}
-                  onChange={(e) => setDay(day, { available: e.target.checked })}
-                />
-                <span className="w-24 text-sm font-medium">{WEEKDAY_LABELS[day]}</span>
-                {dayState.available && (
-                  <>
-                    <input
-                      type="number"
-                      min={0}
-                      max={480}
-                      step={5}
-                      aria-label={`Minutes disponibles le ${WEEKDAY_LABELS[day]}`}
-                      value={dayState.minutes || ''}
-                      onChange={(e) => setDay(day, { minutes: Number(e.target.value) || 0 })}
-                      className={`w-20 px-2 py-1 ${INPUT_CLASSES}`}
-                    />
-                    <span className="text-xs text-text-muted">min</span>
-                  </>
-                )}
-              </label>
-              {dayState.available && (
-                <label className="mt-2 ml-9 flex items-center gap-2 text-xs text-text-muted">
-                  <input
-                    type="checkbox"
-                    checked={dayState.poolAccess}
-                    onChange={(e) => setDay(day, { poolAccess: e.target.checked })}
-                  />
-                  Piscine accessible ce jour-là
-                </label>
-              )}
-            </Card>
-          )
-        })}
-      </ul>
+      <AvailabilityForm
+        weeklyPattern={draft.weeklyPattern}
+        restDays={draft.restDays}
+        onChangeDay={setDay}
+        onChangeRestDays={(restDays) => onChange({ restDays })}
+      />
     </div>
   )
 }

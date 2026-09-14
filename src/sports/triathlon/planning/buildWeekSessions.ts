@@ -2,6 +2,7 @@ import {
   getAvailableMinutes,
   hasPoolAccess,
   resolveDesiredRestDays,
+  resolveRestDates,
   type Availability,
 } from '@/core/availability/Availability'
 import type { PlannedSession } from '@/core/training/PlannedSession'
@@ -58,14 +59,20 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     (date) => date < planEndDateExclusive,
   )
 
-  // At least one rest day per week, always — even if every day is marked
-  // available with enough minutes. Days are already sorted by most
-  // available minutes first, so capping the count here simply drops the
-  // day(s) with the least time, leaving them unscheduled (a rest day).
-  const restDaysPerWeek = resolveDesiredRestDays(availability)
+  // Explicit rest day(s) always win — never scheduled, whatever their
+  // declared availability says. Falls back to the old "pick whichever
+  // day(s) have the least time" heuristic only when no explicit choice
+  // exists (old data, or none of the chosen weekdays fall in this
+  // particular week). Excluding explicit rest dates from the pool *before*
+  // computing the count ceiling is what prevents an already-unavailable
+  // day from being double-counted against a separately-desired rest day.
+  const explicitRestDates = resolveRestDates(availability, weekDates)
+  const restDaysPerWeek =
+    explicitRestDates.size > 0 ? explicitRestDates.size : resolveDesiredRestDays(availability)
   const maxTrainingDays = Math.max(0, weekDates.length - restDaysPerWeek)
 
   const daysWithMinutes = weekDates
+    .filter((date) => !explicitRestDates.has(date))
     .map((date) => ({
       date,
       minutes: getAvailableMinutes(availability, date),

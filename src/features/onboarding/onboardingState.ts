@@ -1,9 +1,9 @@
 import type { BiologicalSex, Equipment, KnownMetrics } from '@/core/athlete/AthleteProfile'
 import type { AvailabilityException, WeeklyPattern } from '@/core/availability/Availability'
-import { createEmptyWeeklyPattern, MIN_REST_DAYS_PER_WEEK } from '@/core/availability/Availability'
+import { createEmptyWeeklyPattern } from '@/core/availability/Availability'
 import type { TriathlonExperience } from '@/core/athlete/AthleteProfile'
 import type { TriathlonDistance } from '@/sports/triathlon/domain/distance'
-import type { DateISO, Level } from '@/shared/types/common'
+import type { DateISO, Level, Weekday } from '@/shared/types/common'
 
 /**
  * One draft object accumulated across onboarding steps, later split into
@@ -30,7 +30,9 @@ export interface OnboardingDraft {
 
   weeklyPattern: WeeklyPattern
   exceptions: AvailabilityException[]
-  desiredRestDaysPerWeek: number
+  /** Weekday(s) explicitly chosen as rest days — always at least one
+   * before the athlete can continue past the availability step. */
+  restDays: Weekday[]
 
   constraintsNote?: string
 }
@@ -52,7 +54,7 @@ export function createInitialDraft(): OnboardingDraft {
     knownMetrics: {},
     weeklyPattern: createEmptyWeeklyPattern(),
     exceptions: [],
-    desiredRestDaysPerWeek: MIN_REST_DAYS_PER_WEEK,
+    restDays: [],
   }
 }
 

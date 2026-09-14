@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { EditAvailabilityPage } from '@/features/availability/EditAvailabilityPage'
 import { CssTestPage } from '@/features/calibration/CssTestPage'
 import { FtpTestPage } from '@/features/calibration/FtpTestPage'
 import { ThresholdPaceTestPage } from '@/features/calibration/ThresholdPaceTestPage'
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
           { path: 'nutrition', element: <NutritionPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile/availability', element: <EditAvailabilityPage /> },
           { path: 'profile/tests/ftp', element: <FtpTestPage /> },
           { path: 'profile/tests/css', element: <CssTestPage /> },
           { path: 'profile/tests/threshold', element: <ThresholdPaceTestPage /> },

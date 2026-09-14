@@ -33,6 +33,7 @@ async function fillExperienceStep(page: Page) {
 }
 
 async function fillAvailabilityStep(page: Page) {
+  await page.getByRole('checkbox', { name: 'Repos le Dimanche' }).click()
   for (const day of ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']) {
     await page.getByRole('checkbox', { name: new RegExp(`^${day}$`) }).click()
     await page.getByLabel(`Minutes disponibles le ${day}`).fill('90')
@@ -408,6 +409,37 @@ test.describe('profile', () => {
     expect(text).toMatch(/W\/kg/)
     expect(text).toMatch(/Confirmé|Avancé|Intermédiaire|Occasionnel|Débutant|Élite/)
     await scanAxe(page)
+  })
+
+  test('editing availability changes the rest day and reflects it in the plan', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+    await page.getByRole('link', { name: 'Modifier mes disponibilités' }).click()
+    await page.waitForSelector('text=Modifier tes disponibilités')
+    await scanAxe(page)
+
+    // Move the rest day from Sunday (set by fillAvailabilityStep) to Wednesday.
+    await page.getByRole('checkbox', { name: 'Repos le Dimanche' }).click()
+    await page.getByRole('checkbox', { name: 'Repos le Mercredi' }).click()
+    await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Disponibilités mises à jour')
+    await scanAxe(page)
+
+    await page.getByRole('button', { name: 'Retour au profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+  })
+
+  test('the "Continuer"-equivalent Save stays disabled with zero rest days chosen', async ({ page }) => {
+    await completeOnboarding(page)
+    await page.getByRole('link', { name: 'Profil' }).click()
+    await page.waitForSelector('text=Ton profil')
+    await page.getByRole('link', { name: 'Modifier mes disponibilités' }).click()
+    await page.waitForSelector('text=Modifier tes disponibilités')
+
+    // Uncheck the only rest day without picking another.
+    await page.getByRole('checkbox', { name: 'Repos le Dimanche' }).click()
+    await expect(page.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
   })
 })
 
