@@ -10,17 +10,27 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  retries: 0,
-  reporter: 'list',
+  retries: process.env.CI ? 2 : 0,
+  // On CI, 'github' annotates failures inline on the run; the HTML report
+  // is written alongside it (never opened automatically) so a failure can
+  // upload it as an artifact for a full trace/screenshot, not just a message.
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://localhost:4173',
-    // This environment pre-installs Chromium at a fixed path rather than
-    // the version Playwright itself would download for this pinned
-    // @playwright/test release — point at it explicitly.
+    // This sandbox pre-installs Chromium at a fixed path rather than the
+    // version Playwright itself would download for this pinned
+    // @playwright/test release — point at it explicitly. On CI (GitHub
+    // Actions sets `CI`), that path doesn't exist: `playwright install`
+    // puts the browser wherever Playwright's own cache expects it, so
+    // leave `executablePath` unset there and let it find it itself.
     launchOptions: {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH ?? '/opt/pw-browsers/chromium',
+      executablePath: process.env.CI
+        ? undefined
+        : (process.env.PLAYWRIGHT_CHROMIUM_PATH ?? '/opt/pw-browsers/chromium'),
     },
     viewport: { width: 390, height: 844 },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

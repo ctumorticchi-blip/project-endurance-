@@ -1,5 +1,7 @@
 # Project Endurance
 
+[![CI](https://github.com/ctumorticchi-blip/project-endurance-/actions/workflows/ci.yml/badge.svg)](https://github.com/ctumorticchi-blip/project-endurance-/actions/workflows/ci.yml)
+
 > Nom de code interne. La marque commerciale définitive n'est pas encore
 > choisie — voir `src/config/brand.ts` pour l'identité centralisée.
 
@@ -95,6 +97,15 @@ Deux suites, pour deux natures de bug différentes :
   chacun scanné avec `axe-core` (règles `wcag2a`/`wcag2aa`) dans un
   navigateur réel. Pas inclus dans `npm run check` (plus lent, nécessite
   un navigateur) — à exécuter explicitement.
+
+## Intégration continue
+
+`.github/workflows/ci.yml` fait tourner les deux suites sur chaque push et
+chaque pull request vers `main` : d'abord `npm run check` (typecheck, lint,
+tests unitaires, build), puis, seulement si ça passe, `npm run test:e2e`
+(Playwright + axe-core) avec le rapport HTML uploadé comme artefact en cas
+d'échec. Objectif : un commit qui casse le build ou introduit une
+régression d'accessibilité ne peut plus passer inaperçu.
 
 ## Déploiement
 
