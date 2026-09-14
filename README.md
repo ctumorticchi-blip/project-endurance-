@@ -87,6 +87,18 @@ produit) plutôt que de tester une fonction isolément.
 **https://project-endurance-ugno.vercel.app/** — build de production
 Vite déployé sur Vercel (rewrite SPA configuré dans `vercel.json`).
 
+PWA (M1.7) : `vite-plugin-pwa` précache tout le shell applicatif au build
+(`npm run build` génère `dist/sw.js` + `dist/manifest.webmanifest`) — l'app
+est installable et se recharge hors-ligne après une première visite,
+cohérent avec le principe local-first (aucun appel réseau applicatif à
+mettre en cache). Vérifié avec `vite preview` + Playwright : service worker
+actif, manifest et icônes valides, rechargement réussi avec le réseau
+coupé (`context.setOffline(true)`). Non re-testé sur le déploiement Vercel
+lui-même — `*.vercel.app` est bloqué au niveau réseau de cet environnement
+de dev — mais `sw.js`/`manifest.webmanifest`/`icons/*` sont des fichiers
+statiques réels dans `dist/`, donc Vercel les sert directement (comme il le
+fait déjà pour `assets/*.js`) sans passer par le rewrite SPA.
+
 ## Roadmap actuelle
 
 **M0 — Le coach fonctionne — terminé** (M0.0 à M0.12, voir `docs/roadmap.md`
