@@ -444,4 +444,59 @@ export const BIKE_SESSIONS: SessionTemplate[] = [
       cooldownBlock(15),
     ],
   },
+
+  // --- Cadence — travail neuromusculaire/technique, complément à faible
+  // coût de fatigue plutôt qu'un stimulus supplémentaire à part entière. ---
+  {
+    id: 'bike-cadence-drills',
+    discipline: 'bike',
+    sessionType: 'technique',
+    tier: 'standard',
+    title: 'Travail de cadence',
+    objective:
+      "Améliore ton efficacité de pédalage par des blocs à cadence élevée, sans intensité — un stimulus neuromusculaire léger plutôt qu'un vrai effort.",
+    estimatedDurationMin: 30,
+    defaultPriority: 'optional',
+    blocks: [
+      warmupBlock(8),
+      {
+        label: 'Cadence élevée (>100 rpm)',
+        durationSec: minutesToSec(1),
+        repeat: 6,
+        restSec: 90,
+        targetZone: 'Z2',
+        targetRpeMin: RPE_RANGE.easy[0],
+        targetRpeMax: RPE_RANGE.easy[1],
+        note: 'Braquet léger, cadence élevée, relâché — la vitesse vient de la fréquence de pédalage, pas de la force.',
+      },
+      cooldownBlock(8),
+    ],
+  },
+
+  // --- Allure course — spécificité pure, distincte de l'endurance/tempo :
+  // reproduit précisément l'intensité cible du jour J plutôt qu'une zone
+  // générique. ---
+  {
+    id: 'bike-race-specific',
+    discipline: 'bike',
+    sessionType: 'race-specific',
+    tier: 'standard',
+    title: 'Bloc allure course vélo',
+    objective:
+      "Répète ton allure/puissance cible de course vélo en continu — la répétition la plus spécifique possible de ta portion vélo, hors brick.",
+    estimatedDurationMin: 70,
+    defaultPriority: 'key',
+    blocks: [
+      warmupBlock(15),
+      {
+        label: 'Bloc allure course',
+        durationSec: minutesToSec(40),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+        note: 'À ta puissance/allure cible de course exacte, pas plus — la spécificité prime sur la performance du jour.',
+      },
+      cooldownBlock(15),
+    ],
+  },
 ]

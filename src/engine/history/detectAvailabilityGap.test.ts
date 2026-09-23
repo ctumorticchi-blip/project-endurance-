@@ -43,4 +43,20 @@ describe('detectAvailabilityGap', () => {
     const result = detectAvailabilityGap(availabilityWithDays(6), feedback(outcomes))
     expect(result.suggestedSessionsPerWeek).toBeGreaterThanOrEqual(1)
   })
+
+  it('reports declared and observed weekly hours equal when there is no gap', () => {
+    const result = detectAvailabilityGap(availabilityWithDays(6), feedback(['completed', 'completed', 'completed']))
+    expect(result.declaredWeeklyHours).toBe(6) // 6 days * 60min = 6h
+    expect(result.observedWeeklyHours).toBe(6)
+  })
+
+  it('scales observed weekly hours down by the same completion-rate evidence as the session-count suggestion (brief §5 example)', () => {
+    // 6 declared sessions/week (6h), 4 of the last 8 completed (50% completion).
+    const outcomes: SessionOutcome[] = ['completed', 'completed', 'completed', 'completed', 'missed', 'missed', 'missed', 'missed']
+    const result = detectAvailabilityGap(availabilityWithDays(6), feedback(outcomes))
+    expect(result.hasGap).toBe(true)
+    expect(result.declaredWeeklyHours).toBe(6)
+    expect(result.observedWeeklyHours).toBeLessThan(result.declaredWeeklyHours)
+    expect(result.observedWeeklyHours).toBeCloseTo(6 * (4 / 8), 1)
+  })
 })

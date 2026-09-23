@@ -70,6 +70,41 @@ export const BRICK_SESSIONS: SessionTemplate[] = [
     ],
   },
   {
+    id: 'brick-race-rehearsal',
+    discipline: 'brick',
+    sessionType: 'race-specific',
+    tier: 'peak',
+    title: 'Répétition générale',
+    objective:
+      "Simulation limitée du jour de course : allures cibles, transitions, et l'occasion de tester ta stratégie de nutrition/matériel avant la vraie course. À utiliser avec parcimonie — pas chaque semaine.",
+    estimatedDurationMin: 130,
+    defaultPriority: 'key',
+    blocks: [
+      {
+        label: 'Vélo allure course',
+        durationSec: minutesToSec(80),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+        note: "Teste ici ta stratégie de nutrition/hydratation de course.",
+      },
+      {
+        label: 'Transition rapide',
+        durationSec: minutesToSec(3),
+        targetRpeMin: RPE_RANGE.easy[0],
+        targetRpeMax: RPE_RANGE.easy[1],
+        note: "Enchaîne comme le jour J : matériel de course, pas d'entraînement.",
+      },
+      {
+        label: 'Course allure course',
+        durationSec: minutesToSec(35),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+      },
+    ],
+  },
+  {
     id: 'transition-practice',
     discipline: 'brick',
     sessionType: 'transition',

@@ -381,4 +381,64 @@ export const RUN_SESSIONS: SessionTemplate[] = [
       cooldownBlock(10),
     ],
   },
+
+  // --- Lignes droites — stimulus neuromusculaire à faible volume,
+  // complément d'un footing facile plutôt qu'une séance à part entière. ---
+  {
+    id: 'run-easy-strides',
+    discipline: 'run',
+    sessionType: 'endurance',
+    tier: 'standard',
+    title: 'Footing facile + lignes droites',
+    objective:
+      "Entretient ta fréquence de foulée et ton relâchement par quelques accélérations courtes en fin de footing facile, sans la fatigue d'une vraie séance de vitesse.",
+    estimatedDurationMin: 40,
+    defaultPriority: 'secondary',
+    blocks: [
+      warmupBlock(5),
+      {
+        label: 'Footing Z2',
+        durationSec: minutesToSec(25),
+        targetZone: 'Z2',
+        targetRpeMin: RPE_RANGE.endurance[0],
+        targetRpeMax: RPE_RANGE.endurance[1],
+      },
+      {
+        label: 'Lignes droites (strides)',
+        durationSec: 20,
+        repeat: 6,
+        restSec: 60,
+        targetZone: 'Z4',
+        targetRpeMin: RPE_RANGE.threshold[0],
+        targetRpeMax: RPE_RANGE.threshold[1],
+        note: 'Accélération progressive jusqu\'à environ 90% de ta vitesse max, jamais à fond.',
+      },
+      cooldownBlock(5),
+    ],
+  },
+
+  // --- Allure course — spécificité pure de la portion course, hors brick. ---
+  {
+    id: 'run-race-specific',
+    discipline: 'run',
+    sessionType: 'race-specific',
+    tier: 'standard',
+    title: 'Bloc allure course',
+    objective:
+      "Répète ton allure cible de course à pied en continu — la répétition la plus spécifique possible de ta portion course, hors brick.",
+    estimatedDurationMin: 45,
+    defaultPriority: 'key',
+    blocks: [
+      warmupBlock(12),
+      {
+        label: 'Bloc allure course',
+        durationSec: minutesToSec(25),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+        note: 'À ton allure cible de course exacte, pas plus vite — la spécificité prime sur la performance du jour.',
+      },
+      cooldownBlock(8),
+    ],
+  },
 ]

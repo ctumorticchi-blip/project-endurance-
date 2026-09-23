@@ -10,6 +10,19 @@ export interface AvailabilityGapResult {
   hasGap: boolean
   declaredSessionsPerWeek: number
   suggestedSessionsPerWeek: number
+  /** Declared weekly training hours, from the weekly pattern alone. */
+  declaredWeeklyHours: number
+  /**
+   * Estimated *sustainable* weekly hours — `declaredWeeklyHours` scaled by
+   * the same completion-rate evidence as `suggestedSessionsPerWeek`, not a
+   * separately reconstructed per-week total (feedback entries don't carry
+   * enough date information to bucket them into calendar weeks reliably,
+   * and a ratio-based estimate avoids fabricating a precision the data
+   * can't support). Equal to `declaredWeeklyHours` whenever `hasGap` is
+   * false. This is Training Intelligence V2's "declared vs. observed
+   * capacity" distinction (brief §5) — COACHING_HEURISTIC.
+   */
+  observedWeeklyHours: number
   /** Ready-to-display message (brief §30) — undefined when there's no gap. */
   suggestion?: string
 }
@@ -28,6 +41,10 @@ export function detectAvailabilityGap(
   const declaredSessionsPerWeek = Object.values(availability.weeklyPattern).filter(
     (day) => day.available && day.minutes > 0,
   ).length
+  const declaredWeeklyHours =
+    Object.values(availability.weeklyPattern)
+      .filter((day) => day.available)
+      .reduce((sum, day) => sum + day.minutes, 0) / 60
 
   const recent = feedbackHistory.slice(-MIN_ENTRIES)
   if (recent.length < MIN_ENTRIES) {
@@ -35,6 +52,8 @@ export function detectAvailabilityGap(
       hasGap: false,
       declaredSessionsPerWeek,
       suggestedSessionsPerWeek: declaredSessionsPerWeek,
+      declaredWeeklyHours,
+      observedWeeklyHours: declaredWeeklyHours,
     }
   }
 
@@ -46,14 +65,19 @@ export function detectAvailabilityGap(
       hasGap: false,
       declaredSessionsPerWeek,
       suggestedSessionsPerWeek: declaredSessionsPerWeek,
+      declaredWeeklyHours,
+      observedWeeklyHours: declaredWeeklyHours,
     }
   }
 
   const suggestedSessionsPerWeek = Math.max(1, Math.round(declaredSessionsPerWeek * completionRate))
+  const observedWeeklyHours = Math.round(declaredWeeklyHours * completionRate * 10) / 10
   return {
     hasGap: true,
     declaredSessionsPerWeek,
     suggestedSessionsPerWeek,
+    declaredWeeklyHours,
+    observedWeeklyHours,
     suggestion:
       `Ton programme semble trop chargé pour ton emploi du temps. Je te propose de passer à ` +
       `${suggestedSessionsPerWeek} séance${suggestedSessionsPerWeek > 1 ? 's' : ''} hebdomadaires ` +
