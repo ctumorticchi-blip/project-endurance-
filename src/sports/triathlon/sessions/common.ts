@@ -73,7 +73,13 @@ export interface SessionTemplate {
  * only place block/session ids are minted for real plan instances. */
 export function instantiateSessionTemplate(
   template: SessionTemplate,
-  options: { date: DateISO; weekId: string; priority?: SessionPriority },
+  options: {
+    date: DateISO
+    weekId: string
+    priority?: SessionPriority
+    familyId?: string
+    reasonCodes?: string[]
+  },
 ): PlannedSession {
   return createPlannedSession({
     discipline: template.discipline,
@@ -85,5 +91,7 @@ export function instantiateSessionTemplate(
     date: options.date,
     weekId: options.weekId,
     blocks: template.blocks.map((b) => ({ ...b, id: crypto.randomUUID() })),
+    familyId: options.familyId,
+    reasonCodes: options.reasonCodes,
   })
 }

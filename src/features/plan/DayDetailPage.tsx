@@ -1,26 +1,24 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import { findSessionForDate, findWeekForDate } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
 import { addSessionToPlan, removeSessionFromPlan, replaceSessionInPlan } from '@/engine/adaptation/applyAdaptationToPlan'
+import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
+import { explainSession } from '@/engine/coach/explainSession'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
+import { CoachInsight } from '@/shared/components/CoachInsight'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { RestDayMovePrompt } from '@/shared/components/RestDayMovePrompt'
+import { SessionBlockList } from '@/shared/components/SessionBlockList'
 import { SwapSessionControl } from '@/shared/components/SwapSessionControl'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
+import { SESSION_PRIORITY_LABELS, SESSION_PRIORITY_TONE } from '@/shared/sessionPriorityLabels'
 import { toISODate } from '@/shared/utils/date'
-import { formatBlock } from '@/shared/utils/workoutBlock'
-
-const PRIORITY_LABELS: Record<string, string> = {
-  key: 'Clé',
-  secondary: 'Secondaire',
-  optional: 'Optionnelle',
-}
-const PRIORITY_TONE = { key: 'primary', secondary: 'neutral', optional: 'neutral' } as const
 
 function formatFullDate(dateISO: string): string {
   return new Date(dateISO).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -59,6 +57,9 @@ export function DayDetailPage() {
   const session = findSessionForDate(plan, date)
   const today = toISODate(new Date())
   const isPast = date < today
+  const athleteProfile = AthleteProfileRepository.load()
+  const zones = calculateAthleteZones(athleteProfile?.knownMetrics ?? {})
+  const sessionExplanation = session ? explainSession(session) : undefined
 
   const handleSwap = (newSession: PlannedSession) => {
     TrainingPlanRepository.save(replaceSessionInPlan(plan, newSession))
@@ -108,32 +109,17 @@ export function DayDetailPage() {
           <Card variant="raised">
             <div className="mb-1 flex items-center justify-between">
               <p className="text-xs font-medium text-text-muted">{DISCIPLINE_LABELS[session.discipline]}</p>
-              <Badge tone={PRIORITY_TONE[session.priority]}>{PRIORITY_LABELS[session.priority]}</Badge>
+              <Badge tone={SESSION_PRIORITY_TONE[session.priority]}>{SESSION_PRIORITY_LABELS[session.priority]}</Badge>
             </div>
             <h2 className="text-lg font-semibold">{session.title}</h2>
             <p className="mt-1 text-sm text-text-muted">{session.estimatedDurationMin} min</p>
           </Card>
 
-          <section>
-            <h2 className="mb-1 text-sm font-semibold">Objectif</h2>
-            <p className="text-sm text-text-muted">{session.objective}</p>
-          </section>
+          <CoachInsight explanation={sessionExplanation} fallbackMessage={session.objective} />
 
           <section>
             <h2 className="mb-2 text-sm font-semibold">Structure</h2>
-            <ol className="flex flex-col gap-2">
-              {session.blocks.map((block) => (
-                <Card key={block.id} as="li" variant="muted" className="text-sm">
-                  <p className="font-medium">{block.label}</p>
-                  <p className="text-xs text-text-muted">
-                    {formatBlock(block)}
-                    {block.targetZone ? ` · ${block.targetZone}` : ''} · RPE {block.targetRpeMin}-
-                    {block.targetRpeMax}
-                  </p>
-                  {block.note && <p className="mt-1 text-xs text-text-muted">{block.note}</p>}
-                </Card>
-              ))}
-            </ol>
+            <SessionBlockList session={session} zones={zones} />
           </section>
 
           {!isPast && availability && (

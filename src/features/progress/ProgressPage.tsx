@@ -1,4 +1,5 @@
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
+import { ProgressionStateRepository } from '@/core/coaching/ProgressionStateRepository'
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
@@ -6,12 +7,17 @@ import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDeci
 import { buildLastWeekSummary } from '@/engine/history/buildLastWeekSummary'
 import { buildLoadTrend } from '@/engine/history/buildLoadTrend'
 import { buildProgressSummary } from '@/engine/history/buildProgressSummary'
+import { decideProgressionResponse } from '@/engine/progression/decideProgressionResponse'
+import { deriveOverallFatigueSignal } from '@/engine/progression/deriveOverallFatigueSignal'
+import { WORKOUT_FAMILIES } from '@/sports/triathlon/coaching/workoutFamilies'
 import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { ProgressBar } from '@/shared/components/ProgressBar'
+import { ProgressionDecisionCard } from '@/shared/components/ProgressionDecisionCard'
 import { StatTile } from '@/shared/components/StatTile'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
+import { SESSION_TYPE_LABELS } from '@/shared/sessionTypeLabels'
 import type { Discipline } from '@/shared/types/common'
 import { formatHoursAndMinutes } from '@/shared/utils/duration'
 import { LoadTrendChart } from './LoadTrendChart'
@@ -37,6 +43,28 @@ export function ProgressPage() {
   const maxDisciplineMinutes = Math.max(1, ...disciplineEntries.map(([, minutes]) => minutes))
   const loadTrend = buildLoadTrend(plan, CompletedSessionRepository.loadAll(), new Date())
   const lastWeekSummary = buildLastWeekSummary(plan, CompletedSessionRepository.loadAll(), new Date())
+
+  // Per-family progression (brief §13/§30): only families with at least one
+  // real recorded exposure — an empty ladder with nothing to show would be
+  // noise, not insight (same "gate on evidence" pattern as `consistencyRate`
+  // above). Re-runs the *same* deterministic `decideProgressionResponse`
+  // the feedback pages already use — never a second, page-local heuristic
+  // — so what's shown here is always consistent with what was shown right
+  // after that feedback was submitted.
+  const recentFeedbackForFatigue = [...SessionFeedbackRepository.loadAll()].reverse()
+  const fatigueElevated = deriveOverallFatigueSignal(recentFeedbackForFatigue)
+  const progressionCards = ProgressionStateRepository.loadAll()
+    .filter((state) => state.history.length > 0)
+    .flatMap((state) => {
+      const family = WORKOUT_FAMILIES[state.familyId]
+      if (!family) return []
+      const response = decideProgressionResponse({
+        state,
+        maxLevel: family.progressionLevels,
+        recentOverallFatigueElevated: fatigueElevated,
+      })
+      return [{ family, state, response }]
+    })
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6">
@@ -92,6 +120,33 @@ export function ProgressPage() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {progressionCards.length > 0 ? (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">Progression par type de séance</h2>
+          <ul className="flex flex-col gap-2">
+            {progressionCards.map(({ family, state, response }) => (
+              <li key={family.id}>
+                <p className="mb-1 text-xs font-medium text-text-muted">
+                  {DISCIPLINE_LABELS[family.discipline]} · {SESSION_TYPE_LABELS[family.sessionType]}
+                </p>
+                <ProgressionDecisionCard
+                  response={response}
+                  previousLevel={state.currentLevel}
+                  maxLevel={family.progressionLevels}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <section>
+          <h2 className="mb-1 text-sm font-semibold">Progression par type de séance</h2>
+          <Card variant="muted" className="text-sm text-text-muted">
+            Pas encore assez de séances enregistrées pour montrer une progression par type de séance.
+          </Card>
         </section>
       )}
 

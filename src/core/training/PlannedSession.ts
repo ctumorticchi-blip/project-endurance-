@@ -36,6 +36,26 @@ export interface PlannedSession {
   blocks: WorkoutBlock[]
   estimatedDurationMin: number
   /**
+   * The Workout Family this session was generated from (see
+   * `core/coaching/workoutFamily.ts`), when the sport module populates one.
+   * Optional and additive (Coaching Experience V1): lets the presentation
+   * layer resolve `WorkoutFamily.trainingPurpose`/`physiologicalIntent`/
+   * `explanation`/`evidenceClassification` without re-deriving them from
+   * `discipline`+`sessionType` alone, and without risk to older persisted
+   * plans that predate this field (simply absent, never wrong).
+   */
+  familyId?: string
+  /**
+   * Why the Weekly Composer requested this specific occurrence this week
+   * (e.g. `'ANCHOR_SESSION'`, `'LIMITER_DEVELOPMENT_TOUCH'` — see
+   * `weeklyStimulusComposer.ts`), copied from the `SessionRequirement` that
+   * produced it. Composition-time-only reasoning that has no other way to
+   * reach the UI once a real day is chosen (brief Coaching Experience V1
+   * §1: expose the engine's real reason, never a UI guess). Optional: only
+   * triathlon sessions populate it today.
+   */
+  reasonCodes?: string[]
+  /**
    * Duration and blocks exactly as generated, before any same-day
    * adaptation (readiness check-in, "less time today"). Every such
    * decision is computed relative to this baseline rather than the

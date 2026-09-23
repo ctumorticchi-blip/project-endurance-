@@ -14,6 +14,7 @@ import { AdaptationDecisionRepository } from '@/engine/adaptation/AdaptationDeci
 import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
 import { calculatePowerToWeight } from '@/engine/calibration/powerToWeight'
 import type { Zone } from '@/engine/calibration/zones'
+import { analyzeLimiters } from '@/sports/triathlon/coaching/limiterAnalysis'
 import { Button } from '@/shared/components/Button'
 import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
@@ -93,6 +94,11 @@ export function ProfilePage() {
 
   const zones = calculateAthleteZones(profile.knownMetrics)
   const metrics = profile.knownMetrics
+  // Triathlon only — a running-only profile has no swim/bike level to
+  // compare against, and `analyzeLimiters` would otherwise silently treat
+  // the missing disciplines as 'beginner' (brief §32).
+  const limiterAnalysis =
+    profile.disciplineLevels.swim && profile.disciplineLevels.bike ? analyzeLimiters(profile) : undefined
   const { sex, heightCm, weightKg } = profile.biometrics ?? {}
   const powerToWeight = calculatePowerToWeight(metrics.ftpWatts, weightKg, sex)
 
@@ -112,6 +118,9 @@ export function ProfilePage() {
           {profile.disciplineLevels.bike && ` · Vélo ${LEVEL_LABELS[profile.disciplineLevels.bike]}`}
           {` · Course ${LEVEL_LABELS[profile.disciplineLevels.run]}`}
         </p>
+        {limiterAnalysis && !limiterAnalysis.isBalanced && (
+          <p className="mt-1 text-sm text-text-muted">{limiterAnalysis.explanation}</p>
+        )}
         {biometricsParts.length > 0 && (
           <p className="mt-1 text-sm text-text-muted">{biometricsParts.join(' · ')}</p>
         )}

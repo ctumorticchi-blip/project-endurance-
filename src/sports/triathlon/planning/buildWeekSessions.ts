@@ -350,7 +350,20 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     const priority: SessionPriority =
       mappedPriority === 'key' && template.sessionType === 'recovery' ? 'secondary' : mappedPriority
 
-    sessions.push(instantiateSessionTemplate(template, { date: day.date, weekId, priority }))
+    sessions.push(
+      instantiateSessionTemplate(template, {
+        date: day.date,
+        weekId,
+        priority,
+        // `actualFamily` (the template actually chosen), not
+        // `requirement.familyId` (what was originally requested) — a
+        // session that degraded (threshold → endurance) must be explained
+        // to the athlete as what it actually became, matching the minimum-
+        // duration check just above.
+        familyId: actualFamily?.id ?? requirement.familyId,
+        reasonCodes: requirement.reasonCodes,
+      }),
+    )
   }
 
   return sessions.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))

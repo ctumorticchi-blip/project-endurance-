@@ -1,9 +1,11 @@
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { weeksUntilRace } from '@/core/goals/RaceGoal'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
 import { getRaceDistanceLabel } from '@/core/goals/raceGoalDisplay'
 import { SecondaryRaceGoalRepository } from '@/core/goals/SecondaryRaceGoalRepository'
 import { findWeekForDate } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
+import { analyzeLimiters } from '@/sports/triathlon/coaching/limiterAnalysis'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { toISODate } from '@/shared/utils/date'
 import { WeekCard } from './WeekCard'
@@ -29,6 +31,9 @@ export function PlanPage() {
   const distanceLabel = getRaceDistanceLabel(raceGoal)
   const weeksLeft = weeksUntilRace(raceGoal.raceDate)
   const currentWeek = findWeekForDate(plan, toISODate(new Date()))
+  const athleteProfile = AthleteProfileRepository.load()
+  const limiterAnalysis =
+    raceGoal.sport === 'triathlon' && athleteProfile ? analyzeLimiters(athleteProfile) : undefined
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
@@ -57,6 +62,7 @@ export function PlanPage() {
             week={week}
             isCurrent={week.id === currentWeek?.id}
             secondaryRaces={secondaryRaces}
+            limiterAnalysis={limiterAnalysis}
           />
         ))}
       </ul>

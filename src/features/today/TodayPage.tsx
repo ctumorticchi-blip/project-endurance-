@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PerceivedDifficulty } from '@/core/history/SessionFeedback'
 import type { ReadinessLevel } from '@/core/history/ReadinessCheck'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
@@ -19,35 +20,26 @@ import {
   replaceSessionInPlan,
 } from '@/engine/adaptation/applyAdaptationToPlan'
 import { decideAdaptation, decideAvailabilityConstraint } from '@/engine/adaptation/decideAdaptation'
+import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
 import { buildTodaySummary } from '@/engine/coach/buildTodaySummary'
+import { explainSession } from '@/engine/coach/explainSession'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
+import { CoachInsight } from '@/shared/components/CoachInsight'
 import { LinkButton } from '@/shared/components/LinkButton'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
 import { RestDayMovePrompt } from '@/shared/components/RestDayMovePrompt'
+import { SessionBlockList } from '@/shared/components/SessionBlockList'
 import { SwapSessionControl } from '@/shared/components/SwapSessionControl'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
+import { SESSION_PRIORITY_LABELS, SESSION_PRIORITY_TONE } from '@/shared/sessionPriorityLabels'
 import { toISODate } from '@/shared/utils/date'
-import { formatBlock } from '@/shared/utils/workoutBlock'
 import { AdjustAvailabilityToday } from './AdjustAvailabilityToday'
-import { CoachInsight } from './CoachInsight'
 import { CurrentMealCard } from './CurrentMealCard'
 import { NutritionSetupPrompt } from './NutritionSetupPrompt'
 import { RaceCountdown } from './RaceCountdown'
 import { ReadinessCheckIn } from './ReadinessCheckIn'
 import { UpcomingRaces } from './UpcomingRaces'
-
-const PRIORITY_LABELS: Record<string, string> = {
-  key: 'Clé',
-  secondary: 'Secondaire',
-  optional: 'Optionnelle',
-}
-
-const PRIORITY_TONE = {
-  key: 'primary',
-  secondary: 'neutral',
-  optional: 'neutral',
-} as const
 
 const DIFFICULTY_LABELS: Record<PerceivedDifficulty, string> = {
   'harder-than-expected': 'Plus dur que prévu',
@@ -70,6 +62,9 @@ export function TodayPage() {
   const today = toISODate(new Date())
   const summary = buildTodaySummary({ plan, raceGoal, today })
   const week = findWeekForDate(plan, today)
+  const athleteProfile = AthleteProfileRepository.load()
+  const zones = calculateAthleteZones(athleteProfile?.knownMetrics ?? {})
+  const sessionExplanation = summary.session ? explainSession(summary.session) : undefined
   const upcomingSecondaryRaces = SecondaryRaceGoalRepository.loadAll()
     .filter((r) => r.raceDate >= today)
     .sort((a, b) => (a.raceDate < b.raceDate ? -1 : a.raceDate > b.raceDate ? 1 : 0))
@@ -193,7 +188,7 @@ export function TodayPage() {
             )}
           </Card>
 
-          <CoachInsight message={summary.explanation} />
+          <CoachInsight explanation={sessionExplanation} fallbackMessage={summary.explanation} />
         </>
       ) : summary.session ? (
         <>
@@ -202,15 +197,12 @@ export function TodayPage() {
               <p className="text-xs font-medium text-text-muted">
                 {DISCIPLINE_LABELS[summary.session.discipline]}
               </p>
-              <Badge tone={PRIORITY_TONE[summary.session.priority]}>
-                {PRIORITY_LABELS[summary.session.priority]}
+              <Badge tone={SESSION_PRIORITY_TONE[summary.session.priority]}>
+                {SESSION_PRIORITY_LABELS[summary.session.priority]}
               </Badge>
             </div>
             <h2 className="text-lg font-semibold">{summary.session.title}</h2>
-            <p className="mt-1 text-sm text-text-muted">
-              {summary.session.estimatedDurationMin} min · Charge prévue{' '}
-              {Math.round(summary.session.estimatedDurationMin)}
-            </p>
+            <p className="mt-1 text-sm text-text-muted">{summary.session.estimatedDurationMin} min</p>
           </Card>
 
           <ReadinessCheckIn
@@ -219,7 +211,11 @@ export function TodayPage() {
             onSelect={handleReadinessSelect}
           />
 
-          <CoachInsight message={summary.explanation} adaptation={activeAdaptation} />
+          <CoachInsight
+            explanation={sessionExplanation}
+            fallbackMessage={summary.explanation}
+            adaptation={activeAdaptation}
+          />
 
           <section>
             <h2 className="mb-1 text-sm font-semibold">Objectif</h2>
@@ -228,19 +224,7 @@ export function TodayPage() {
 
           <section>
             <h2 className="mb-2 text-sm font-semibold">Structure</h2>
-            <ol className="flex flex-col gap-2">
-              {summary.session.blocks.map((block) => (
-                <Card key={block.id} as="li" variant="muted" className="text-sm">
-                  <p className="font-medium">{block.label}</p>
-                  <p className="text-xs text-text-muted">
-                    {formatBlock(block)}
-                    {block.targetZone ? ` · ${block.targetZone}` : ''} · RPE {block.targetRpeMin}-
-                    {block.targetRpeMax}
-                  </p>
-                  {block.note && <p className="mt-1 text-xs text-text-muted">{block.note}</p>}
-                </Card>
-              ))}
-            </ol>
+            <SessionBlockList session={summary.session} zones={zones} />
           </section>
 
           <AdjustAvailabilityToday date={today} onAdjust={handleAvailabilityAdjust} />
@@ -271,7 +255,7 @@ export function TodayPage() {
       ) : (
         <>
           <h2 className="text-lg font-semibold">😌 Jour de repos</h2>
-          <CoachInsight message={summary.explanation} />
+          <CoachInsight fallbackMessage={summary.explanation} />
         </>
       )}
     </div>

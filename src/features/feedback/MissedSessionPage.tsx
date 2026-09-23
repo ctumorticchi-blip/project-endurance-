@@ -20,11 +20,11 @@ import { processSessionFeedback } from '@/engine/progression/processSessionFeedb
 import { getFamilyForSession } from '@/sports/triathlon/coaching/workoutFamilies'
 import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Button } from '@/shared/components/Button'
-import { Card } from '@/shared/components/Card'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { ProgressionDecisionCard } from '@/shared/components/ProgressionDecisionCard'
 
 const REASON_CHOICES: { value: MissedReason; label: string }[] = [
   { value: 'time', label: 'Manque de temps' },
@@ -46,6 +46,7 @@ export function MissedSessionPage() {
   const [comment, setComment] = useState('')
   const [outcome, setOutcome] = useState<AdaptationDecision | null>(null)
   const [progressionResponse, setProgressionResponse] = useState<ProgressionResponse>()
+  const [progressionContext, setProgressionContext] = useState<{ previousLevel: number; maxLevel: number }>()
 
   // Checked before the "session not found" guard below: a REMOVE decision
   // deletes the session from the plan, so by the time this re-renders with
@@ -57,10 +58,14 @@ export function MissedSessionPage() {
         <h1 className="text-lg font-semibold">Programme mis à jour</h1>
         <AdaptationDecisionCard decision={outcome} className="w-full" />
         {progressionResponse && (
-          <Card variant="muted" className="flex w-full flex-col gap-2 text-left">
-            <p className="text-xs font-semibold tracking-wide text-primary uppercase">Pour la prochaine fois</p>
-            <p className="text-sm text-text-muted">{progressionResponse.explanation}</p>
-          </Card>
+          <div className="w-full text-left">
+            <p className="mb-1.5 text-xs font-semibold tracking-wide text-primary uppercase">Pour la prochaine fois</p>
+            <ProgressionDecisionCard
+              response={progressionResponse}
+              previousLevel={progressionContext?.previousLevel ?? 0}
+              maxLevel={progressionContext?.maxLevel}
+            />
+          </div>
         )}
         <Button onClick={() => void navigate('/today', { replace: true })} className="w-full">
           Retour à Aujourd'hui
@@ -113,6 +118,7 @@ export function MissedSessionPage() {
       })
       ProgressionStateRepository.save(nextState)
       setProgressionResponse(response)
+      setProgressionContext({ previousLevel: currentState.currentLevel, maxLevel: family.progressionLevels })
     }
 
     if (decision.type === 'REMOVE') {

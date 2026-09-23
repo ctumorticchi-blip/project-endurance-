@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { findSessionById } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
+import { calculateAthleteZones } from '@/engine/calibration/calculateAthleteZones'
 import { Button } from '@/shared/components/Button'
-import { Card } from '@/shared/components/Card'
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage'
+import { SessionBlockList } from '@/shared/components/SessionBlockList'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
-import { formatBlock } from '@/shared/utils/workoutBlock'
 
 /**
  * The session player shows the whole structure at once instead of running
@@ -34,6 +35,9 @@ export function SessionPlayerPage() {
     )
   }
 
+  const profile = AthleteProfileRepository.load()
+  const zones = calculateAthleteZones(profile?.knownMetrics ?? {})
+
   const toggleBlock = (blockId: string) => {
     setCheckedBlockIds((prev) => {
       const next = new Set(prev)
@@ -57,36 +61,12 @@ export function SessionPlayerPage() {
         <p className="mt-1 text-sm text-text-muted">{session.objective}</p>
       </div>
 
-      <ol className="flex flex-col gap-2">
-        {session.blocks.map((block) => {
-          const checked = checkedBlockIds.has(block.id)
-          return (
-            <Card key={block.id} as="li" variant="muted" className="text-sm">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => toggleBlock(block.id)}
-                  className="mt-1"
-                />
-                {/* No opacity fade for the checked state: it visually dims
-                 * text-muted's already-moderate contrast below WCAG AA
-                 * (measured 2.69:1 via a real axe-core scan) — the
-                 * strikethrough alone is enough signal. */}
-                <span className="flex-1">
-                  <p className={`font-medium ${checked ? 'line-through' : ''}`}>{block.label}</p>
-                  <p className="text-xs text-text-muted">
-                    {formatBlock(block)}
-                    {block.targetZone ? ` · ${block.targetZone}` : ''} · RPE {block.targetRpeMin}-
-                    {block.targetRpeMax}
-                  </p>
-                  {block.note && <p className="mt-1 text-xs text-text-muted">{block.note}</p>}
-                </span>
-              </label>
-            </Card>
-          )
-        })}
-      </ol>
+      <SessionBlockList
+        session={session}
+        zones={zones}
+        checkedBlockIds={checkedBlockIds}
+        onToggleBlock={toggleBlock}
+      />
 
       <Link to="/glossary" className="text-center text-xs text-text-muted underline">
         Un terme n'est pas clair ? Voir le glossaire

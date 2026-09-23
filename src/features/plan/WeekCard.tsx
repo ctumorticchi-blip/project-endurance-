@@ -2,18 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { SecondaryRaceGoal } from '@/core/goals/SecondaryRaceGoal'
 import { TRAINING_PHASE_LABELS, type TrainingWeek } from '@/core/training/TrainingPlan'
-import { explainWeekPurpose } from '@/engine/coach/explainWeekPurpose'
+import { explainWeekComposition } from '@/engine/coach/explainWeekPurpose'
+import type { DisciplineStrengthAnalysis } from '@/sports/triathlon/coaching/limiterAnalysis'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
+import { SESSION_PRIORITY_LABELS, SESSION_PRIORITY_TONE } from '@/shared/sessionPriorityLabels'
 import { addDays, toISODate } from '@/shared/utils/date'
-
-const PRIORITY_LABELS: Record<string, string> = {
-  key: 'Clé',
-  secondary: 'Secondaire',
-  optional: 'Optionnelle',
-}
-const PRIORITY_TONE = { key: 'primary', secondary: 'neutral', optional: 'neutral' } as const
 
 function formatDate(dateISO: string): string {
   return new Date(dateISO).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -42,13 +37,17 @@ interface WeekCardProps {
    * multi-month plan doesn't dump every session on screen at once. */
   isCurrent: boolean
   secondaryRaces?: SecondaryRaceGoal[]
+  /** Triathlon only — omitted for a running plan, or drives no extra note
+   * for a balanced athlete (see `explainWeekComposition`). */
+  limiterAnalysis?: DisciplineStrengthAnalysis
 }
 
-export function WeekCard({ week, isCurrent, secondaryRaces = [] }: WeekCardProps) {
+export function WeekCard({ week, isCurrent, secondaryRaces = [], limiterAnalysis }: WeekCardProps) {
   const [expanded, setExpanded] = useState(isCurrent)
   const totalMinutes = week.sessions.reduce((sum, s) => sum + s.estimatedDurationMin, 0)
   const summaryId = `${week.id}-sessions`
   const today = toISODate(new Date())
+  const composition = explainWeekComposition(week, limiterAnalysis)
 
   return (
     <Card as="li" variant={isCurrent ? 'raised' : 'default'}>
@@ -74,7 +73,8 @@ export function WeekCard({ week, isCurrent, secondaryRaces = [] }: WeekCardProps
 
       {expanded && (
         <>
-          <p className="mt-2 text-xs text-text-muted">{explainWeekPurpose(week.phase)}</p>
+          <p className="mt-2 text-xs text-text-muted">{composition.phaseIntro}</p>
+          {composition.limiterNote && <p className="mt-1 text-xs text-text-muted">{composition.limiterNote}</p>}
           <ul id={summaryId} className="mt-2 flex flex-col gap-1">
             {weekDays(week, secondaryRaces).map(({ date, session, race }) => (
               <li key={date}>
@@ -91,7 +91,7 @@ export function WeekCard({ week, isCurrent, secondaryRaces = [] }: WeekCardProps
                       </span>
                       <span className="flex shrink-0 items-center gap-1.5 text-text-muted">
                         {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
-                        <Badge tone={PRIORITY_TONE[session.priority]}>{PRIORITY_LABELS[session.priority]}</Badge>
+                        <Badge tone={SESSION_PRIORITY_TONE[session.priority]}>{SESSION_PRIORITY_LABELS[session.priority]}</Badge>
                         {session.estimatedDurationMin} min
                       </span>
                     </>
