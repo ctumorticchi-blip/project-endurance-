@@ -56,6 +56,13 @@ describe('MissedSessionPage', () => {
     // the engine REPLACEs it with a shortened version — surfaced before
     // returning to Today, not a silent redirect.
     expect(await screen.findByText('Programme mis à jour')).toBeInTheDocument()
+
+    // Training Intelligence V2: a missed exposure is also recorded against
+    // the session's workout family (run/threshold → RUN_THRESHOLD), and the
+    // resulting progression explanation is shown alongside the adaptation
+    // outcome rather than discarded.
+    expect(screen.getByText('Pour la prochaine fois')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: "Retour à Aujourd'hui" }))
     expect(await screen.findByText('TODAY')).toBeInTheDocument()
 

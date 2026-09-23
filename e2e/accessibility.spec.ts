@@ -262,6 +262,12 @@ test.describe('today', () => {
     await page.getByRole('button', { name: '7', exact: true }).click()
     await page.getByRole('radio', { name: 'Comme prévu' }).click()
     await page.getByRole('button', { name: 'Enregistrer' }).click()
+
+    // Training Intelligence V2: a session mapped to a workout family shows
+    // a brief progression confirmation before returning to Today.
+    await page.waitForSelector('text=Pour la prochaine fois')
+    await scanAxe(page)
+    await page.getByRole('button', { name: 'Continuer' }).click()
     await page.waitForSelector('nav[aria-label="Navigation principale"]')
 
     await expect(page.getByText('Bravo, séance terminée')).toBeVisible()
@@ -384,6 +390,8 @@ test.describe('progress', () => {
     await page.getByRole('button', { name: '6', exact: true }).click()
     await page.getByRole('radio', { name: 'Comme prévu' }).click()
     await page.getByRole('button', { name: 'Enregistrer' }).click()
+    await page.waitForSelector('text=Pour la prochaine fois')
+    await page.getByRole('button', { name: 'Continuer' }).click()
     await page.waitForSelector('nav[aria-label="Navigation principale"]')
 
     await page.getByRole('link', { name: 'Progrès' }).click()

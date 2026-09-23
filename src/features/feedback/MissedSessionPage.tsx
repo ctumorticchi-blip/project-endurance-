@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import { ProgressionStateRepository } from '@/core/coaching/ProgressionStateRepository'
-import { createInitialProgressionState } from '@/core/coaching/progressionState'
+import { createInitialProgressionState, type ProgressionResponse } from '@/core/coaching/progressionState'
 import { createSessionFeedback, type MissedReason } from '@/core/history/SessionFeedback'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { findSessionById } from '@/core/training/TrainingPlan'
@@ -20,6 +20,7 @@ import { processSessionFeedback } from '@/engine/progression/processSessionFeedb
 import { getFamilyForSession } from '@/sports/triathlon/coaching/workoutFamilies'
 import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Button } from '@/shared/components/Button'
+import { Card } from '@/shared/components/Card'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
 import { INPUT_CLASSES } from '@/shared/components/inputStyles'
@@ -44,6 +45,7 @@ export function MissedSessionPage() {
   const [reason, setReason] = useState<MissedReason>()
   const [comment, setComment] = useState('')
   const [outcome, setOutcome] = useState<AdaptationDecision | null>(null)
+  const [progressionResponse, setProgressionResponse] = useState<ProgressionResponse>()
 
   // Checked before the "session not found" guard below: a REMOVE decision
   // deletes the session from the plan, so by the time this re-renders with
@@ -54,6 +56,12 @@ export function MissedSessionPage() {
       <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
         <h1 className="text-lg font-semibold">Programme mis à jour</h1>
         <AdaptationDecisionCard decision={outcome} className="w-full" />
+        {progressionResponse && (
+          <Card variant="muted" className="flex w-full flex-col gap-2 text-left">
+            <p className="text-xs font-semibold tracking-wide text-primary uppercase">Pour la prochaine fois</p>
+            <p className="text-sm text-text-muted">{progressionResponse.explanation}</p>
+          </Card>
+        )}
         <Button onClick={() => void navigate('/today', { replace: true })} className="w-full">
           Retour à Aujourd'hui
         </Button>
@@ -96,7 +104,7 @@ export function MissedSessionPage() {
     const family = getFamilyForSession(session.discipline, session.sessionType)
     if (family) {
       const currentState = ProgressionStateRepository.loadByFamilyId(family.id) ?? createInitialProgressionState(family.id)
-      const { nextState } = processSessionFeedback({
+      const { nextState, response } = processSessionFeedback({
         session,
         outcome: 'missed',
         family,
@@ -104,6 +112,7 @@ export function MissedSessionPage() {
         recentFeedback: SessionFeedbackRepository.loadAll(),
       })
       ProgressionStateRepository.save(nextState)
+      setProgressionResponse(response)
     }
 
     if (decision.type === 'REMOVE') {
