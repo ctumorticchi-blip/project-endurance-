@@ -284,7 +284,11 @@ test.describe('today', () => {
     await page.waitForSelector('text=Modifier mes préférences')
 
     await page.getByRole('link', { name: 'Aujourd’hui' }).click()
-    await page.waitForSelector('text=Vélo')
+    // Whatever discipline today's session actually is shifts with the real
+    // calendar date this suite happens to run on (same reasoning as the
+    // "swapping discipline" test above) — wait for the session card itself
+    // rather than hardcoding one discipline's label.
+    await page.waitForSelector('role=link[name="Commencer"]')
     const text = await page.locator('body').innerText()
     const hour = new Date().getHours()
     const inAMealWindow = (hour >= 5 && hour < 11) || (hour >= 11 && hour < 16) || (hour >= 16 && hour < 22)
