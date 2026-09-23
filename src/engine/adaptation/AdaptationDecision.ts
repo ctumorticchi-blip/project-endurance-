@@ -14,6 +14,7 @@ export type ReasonCode =
   | 'NO_AVAILABLE_SLOT'
   | 'INSUFFICIENT_HISTORY'
   | 'NO_SIGNAL'
+  | 'TAPER_PROTECTION'
 
 export interface AdaptationSnapshot {
   estimatedDurationMin: number

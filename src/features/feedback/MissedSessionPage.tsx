@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
+import { ProgressionStateRepository } from '@/core/coaching/ProgressionStateRepository'
+import { createInitialProgressionState } from '@/core/coaching/progressionState'
 import { createSessionFeedback, type MissedReason } from '@/core/history/SessionFeedback'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { findSessionById } from '@/core/training/TrainingPlan'
@@ -14,6 +16,8 @@ import {
 } from '@/engine/adaptation/applyAdaptationToPlan'
 import { decideAdaptation } from '@/engine/adaptation/decideAdaptation'
 import { computeUpcomingSlots } from '@/engine/adaptation/upcomingAvailability'
+import { processSessionFeedback } from '@/engine/progression/processSessionFeedback'
+import { getFamilyForSession } from '@/sports/triathlon/coaching/workoutFamilies'
 import { AdaptationDecisionCard } from '@/shared/components/AdaptationDecisionCard'
 import { Button } from '@/shared/components/Button'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
@@ -85,6 +89,22 @@ export function MissedSessionPage() {
       upcomingAvailability,
     })
     AdaptationDecisionRepository.append(decision)
+
+    // Training Intelligence V2: a missed exposure is still recorded against
+    // the family's progression state (MAINTAIN, never a silent penalty —
+    // see decideProgressionResponse.ts's MISSED_LAST_EXPOSURE reason).
+    const family = getFamilyForSession(session.discipline, session.sessionType)
+    if (family) {
+      const currentState = ProgressionStateRepository.loadByFamilyId(family.id) ?? createInitialProgressionState(family.id)
+      const { nextState } = processSessionFeedback({
+        session,
+        outcome: 'missed',
+        family,
+        currentState,
+        recentFeedback: SessionFeedbackRepository.loadAll(),
+      })
+      ProgressionStateRepository.save(nextState)
+    }
 
     if (decision.type === 'REMOVE') {
       TrainingPlanRepository.save(removeSessionFromPlan(plan, session.id))

@@ -90,7 +90,12 @@ export function TodayPage() {
   const handleReadinessSelect = (level: ReadinessLevel) => {
     if (!summary.session) return
     const recentFeedback = [...SessionFeedbackRepository.loadAll()].reverse()
-    const result = decideAdaptation({ session: summary.session, readiness: level, recentFeedback })
+    const result = decideAdaptation({
+      session: summary.session,
+      readiness: level,
+      recentFeedback,
+      isRaceWeek: week?.phase === 'race',
+    })
     AdaptationDecisionRepository.append(result)
 
     // Always apply, even for KEEP: KEEP's before/after are the plan's

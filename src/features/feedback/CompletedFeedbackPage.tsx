@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ProgressionStateRepository } from '@/core/coaching/ProgressionStateRepository'
+import { createInitialProgressionState } from '@/core/coaching/progressionState'
 import { createCompletedSession } from '@/core/history/CompletedSession'
 import { CompletedSessionRepository } from '@/core/history/CompletedSessionRepository'
 import { createSessionFeedback, type PerceivedDifficulty } from '@/core/history/SessionFeedback'
 import { SessionFeedbackRepository } from '@/core/history/SessionFeedbackRepository'
 import { findSessionById } from '@/core/training/TrainingPlan'
 import { TrainingPlanRepository } from '@/core/training/TrainingPlanRepository'
+import { processSessionFeedback } from '@/engine/progression/processSessionFeedback'
+import { getFamilyForSession } from '@/sports/triathlon/coaching/workoutFamilies'
 import { Button } from '@/shared/components/Button'
 import { ChoiceGroup } from '@/shared/components/ChoiceGroup'
 import { Field } from '@/shared/components/Field'
@@ -52,6 +56,24 @@ export function CompletedFeedbackPage() {
         comment: comment || undefined,
       }),
     )
+
+    // Training Intelligence V2: record this exposure against the session's
+    // workout family and let the progression engine decide what the next
+    // exposure should target — see engine/progression/processSessionFeedback.ts.
+    const family = getFamilyForSession(session.discipline, session.sessionType)
+    if (family) {
+      const currentState = ProgressionStateRepository.loadByFamilyId(family.id) ?? createInitialProgressionState(family.id)
+      const { nextState } = processSessionFeedback({
+        session,
+        outcome: 'completed',
+        actualRpe: rpe,
+        family,
+        currentState,
+        recentFeedback: SessionFeedbackRepository.loadAll(),
+      })
+      ProgressionStateRepository.save(nextState)
+    }
+
     void navigate('/today', { replace: true })
   }
 

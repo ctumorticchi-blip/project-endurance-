@@ -105,6 +105,35 @@ describe('decideAdaptation — upcoming session (readiness/RPE driven)', () => {
     const third = decideAdaptation({ session: afterSecond, readiness: 'tired', recentFeedback: [] })
     expect(third.after.estimatedDurationMin).toBe(first.after.estimatedDurationMin)
   })
+
+  it('protects race week from readiness/RPE-driven adaptation (brief §26)', () => {
+    const tiredDuringRaceWeek = decideAdaptation({
+      session: session('key', 60),
+      readiness: 'tired',
+      recentFeedback: [],
+      isRaceWeek: true,
+    })
+    expect(tiredDuringRaceWeek.type).toBe('KEEP')
+    expect(tiredDuringRaceWeek.reasons).toEqual(['TAPER_PROTECTION'])
+
+    const highRpeDuringRaceWeek = decideAdaptation({
+      session: session('key', 60),
+      recentFeedback: [feedbackWithRpe(9), feedbackWithRpe(9)],
+      isRaceWeek: true,
+    })
+    expect(highRpeDuringRaceWeek.type).toBe('KEEP')
+    expect(highRpeDuringRaceWeek.reasons).toEqual(['TAPER_PROTECTION'])
+  })
+
+  it('does not protect a normal (non-race) week — readiness/RPE adaptation still applies', () => {
+    const result = decideAdaptation({
+      session: session('key', 60),
+      readiness: 'tired',
+      recentFeedback: [],
+      isRaceWeek: false,
+    })
+    expect(result.type).toBe('REDUCE')
+  })
 })
 
 describe('decideAdaptation — missed session', () => {

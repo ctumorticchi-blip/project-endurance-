@@ -36,6 +36,16 @@ export interface AdaptationContext {
   missedReason?: MissedReason
   /** Future slots with spare capacity, earliest first — used for MOVE. */
   upcomingAvailability?: AvailableSlot[]
+  /**
+   * True when this session's week is the plan's `race` phase (brief §26:
+   * "Protect race-week integrity from adaptation logic"). Race week is
+   * already deliberately light and precisely sequenced — a readiness- or
+   * RPE-driven reduction could remove the priming stimulus it depends on,
+   * and an increase would be actively unsafe days before the start line.
+   * Missed-session handling is unaffected: a session genuinely missed
+   * during race week still needs a real decision, not a blanket KEEP.
+   */
+  isRaceWeek?: boolean
 }
 
 function scaleMinutes(minutes: number, factor: number): number {
@@ -132,11 +142,24 @@ function decideUpcomingSession(
   session: PlannedSession,
   readiness: ReadinessLevel | undefined,
   recentFeedback: SessionFeedback[],
+  isRaceWeek: boolean,
 ): AdaptationDecision {
   // Always the original plan, never the currently-displayed value: this is
   // what makes a fresh check-in (tired → normal → tired) reset instead of
   // compounding on top of the previous one.
   const before: AdaptationSnapshot = { estimatedDurationMin: session.plannedDurationMin }
+
+  if (isRaceWeek) {
+    return decision(
+      session,
+      'KEEP',
+      ['TAPER_PROTECTION'],
+      before,
+      before,
+      "Séance inchangée : la semaine de course est volontairement précise et légère — on ne l'ajuste pas sur un simple ressenti du jour.",
+    )
+  }
+
   const avgRpe = averageRpe(recentFeedback)
 
   if (readiness === 'tired') {
@@ -207,13 +230,13 @@ function decideUpcomingSession(
  *    the next session (brief §29: no automatic training debt).
  */
 export function decideAdaptation(context: AdaptationContext): AdaptationDecision {
-  const { session, readiness, recentFeedback, missedReason, upcomingAvailability = [] } = context
+  const { session, readiness, recentFeedback, missedReason, upcomingAvailability = [], isRaceWeek = false } = context
 
   if (missedReason) {
     return decideMissedSession(session, missedReason, upcomingAvailability)
   }
 
-  return decideUpcomingSession(session, readiness, recentFeedback)
+  return decideUpcomingSession(session, readiness, recentFeedback, isRaceWeek)
 }
 
 /**
