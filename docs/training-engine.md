@@ -53,9 +53,11 @@ Construit le cycle **à rebours depuis la date de course** :
 2. Répartit les phases (base / développement / spécifique / affûtage /
    course) proportionnellement au temps disponible et à la distance visée
    (`phaseAllocation.ts`).
-3. Pour chaque semaine, place la séance clé (sortie longue, séance de
-   qualité) sur le créneau le plus adapté, puis les séances secondaires et
-   optionnelles (`weeklySlots.ts` → `buildWeekSessions.ts`).
+3. Pour chaque semaine, compose dynamiquement ce dont l'athlète a besoin
+   (`weeklyStimulusComposer.ts`), puis place chaque séance sur le jour
+   réel le plus adapté (`buildWeekSessions.ts`) — voir
+   `docs/dynamic-composition.md` pour le détail (Training Intelligence
+   V2.1, remplace l'ancienne table fixe `weeklySlots.ts`).
 4. Insère les bricks / séances race-specific en phase spécifique.
 5. Réduit la charge en affûtage par rapport au pic précédent (invariant
    testé, voir M0.8/M0.9).
@@ -99,7 +101,7 @@ semaine sur l'autre — même charge, forme différente, pour une vraie
 diversification même quand deux semaines consécutives restent au même
 palier.
 
-### Séances secondaires : rotation en développement/spécifique (`weeklySlots.ts`)
+### Séances secondaires : rotation en développement/spécifique (`weeklyStimulusComposer.ts`)
 
 En développement et en spécifique, la séance secondaire d'une discipline
 (vélo/course/natation) suit une **rotation sur 4 semaines** plutôt qu'un

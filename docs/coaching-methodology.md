@@ -212,13 +212,191 @@ non-régression à chaque fois.
   aussi le nombre de séances natation entre un nageur faible et un nageur
   fort (impossible avant cette correction).
 
+## Training Intelligence V2.1 — composition dynamique + audit de coaching approfondi
+
+La limitation ci-dessus (`WEEKLY_SLOT_DISCIPLINES` fixe par nombre de
+jours) **n'existe plus** : la table et son module (`weeklySlots.ts`) ont
+été entièrement supprimés. Voir `docs/dynamic-composition.md` pour
+l'architecture de remplacement (`SessionRequirement` + placement en deux
+temps) et pourquoi elle généralise la 3ᵉ correction ci-dessus au lieu de
+la contourner par un mécanisme de plus.
+
+L'audit V2.1 a repris le plan Gold Standard **séance par séance** (pas
+seulement semaine par semaine), avec deux semaines nommément soupçonnées
+par le brief — Semaine 8 (CSS + tempo course + Sweet Spot + VO2max vélo la
+même semaine) et Semaine 11 (seuil natation + seuil course + seuil vélo la
+même semaine) — plus le développement vélo long, la durabilité course, le
+contenu qualitatif natation, la suffisance de la progression brick et la
+cohérence de l'affûtage. Nouveaux défauts réels trouvés et corrigés :
+
+### 4. Le renforcement était absent de presque toutes les semaines de base/développement
+
+- **Comportement fautif** : à budget de renforcement identique, les
+  semaines 1/2/3/5 (base, hors semaine de deload) n'avaient **aucune**
+  séance de renforcement du tout.
+- **Cause racine** : l'estimation "combien de minutes reste-t-il pour le
+  renforcement cette semaine" additionnait la durée **idéale** de chaque
+  séance cœur déjà décidée (`preferredDurationMin`, ex. ~150min pour
+  l'ancre vélo "long" en base) plutôt qu'une estimation réaliste de ce
+  qu'un seul jour peut effectivement absorber — surestimant
+  systématiquement le temps déjà "consommé" et donc sous-estimant le temps
+  restant.
+- **Correction moteur** : chaque contribution à cette estimation est
+  désormais plafonnée à la moyenne minutes/jour de la semaine avant d'être
+  sommée (`weeklyStimulusComposer.ts`, `estimatedCoreMinutes`).
+- **Test de non-régression** : couvert par la régénération du Gold
+  Standard (`goldStandard.test.ts`) — le renforcement apparaît désormais
+  chaque semaine de base/développement.
+
+### 5. La touche secondaire vélo dégénérait presque toujours en récupération de 30min
+
+- **Comportement fautif** : au lieu de la rotation prévue
+  (endurance/sortie longue/VO2max), la touche secondaire vélo tombait
+  presque à chaque fois sur une récupération de 30min.
+- **Cause racine** : `bike-endurance` (le type le plus fréquent de la
+  rotation) n'avait qu'un seul gabarit `standard` de 70min — bien trop
+  long pour la plupart des petits jours d'une semaine réelle. La chaîne de
+  repli (`EASY_FALLBACK_BY_DISCIPLINE`) tombait alors directement sur
+  `recovery`, qui a toujours un gabarit court.
+- **Correction moteur** : nouveau gabarit `bike-endurance-reduced` (40min,
+  `tier: 'standard'` délibérément — pas `'reduced'`, pour rester
+  atteignable en semaine normale, pas seulement en semaine de deload).
+- **Test de non-régression** : couvert par la régénération du Gold
+  Standard ; la touche secondaire vélo montre désormais une vraie
+  diversité de type au lieu de systématiquement `recovery`.
+
+### 6. La rotation de gabarits gaspillait le plus grand jour de la semaine un mandat sur deux
+
+- **Comportement fautif** : après la correction n°5, la touche vélo
+  "secondaire" tombait parfois sur le gabarit 40min *même quand le plus
+  grand jour de la semaine (90min) était disponible pour la séance clé* —
+  gaspillant le jour le plus important de la semaine un cycle de rotation
+  sur deux.
+- **Cause racine** : `pickTemplate.ts`'s `matchType` triait les gabarits
+  qui rentrent par ordre **alphabétique d'id**, et laissait `rotationKey`
+  tourner sur l'ensemble — sans distinguer "deux variantes structurelles
+  de longueur comparable" (ex. Sweet Spot 55/65min) d'un "filet de
+  sécurité de durée" bien plus court (endurance 40/70min).
+- **Correction moteur** : `matchType` trie désormais par durée
+  décroissante et ne laisse `rotationKey` tourner qu'entre gabarits à
+  moins de 15 minutes du plus long qui rentre (`STRUCTURAL_VARIANT_MARGIN_MIN`).
+- **Test de non-régression** : `buildWeekSessions.test.ts` — "injects a
+  long-endurance secondary touch…" (isolé de l'effet de repli de durée).
+
+### 7. Semaine 8 : Sweet Spot (pic) + VO2max vélo la même semaine que CSS natation + tempo course
+
+- **Scénario** : audit explicitement demandé par le brief (§16). Semaine
+  la plus dure du bloc développement (tier `peak`) pour un athlète dont le
+  vélo n'est ni le limiteur ni le point fort.
+- **Comportement fautif** : la semaine combinait un ancre vélo Sweet Spot
+  *déjà* montée en palier "pic" (77min) avec une touche secondaire vélo
+  VO2max — deux séances vélo indépendamment exigeantes la même semaine,
+  en plus d'une natation CSS et d'une course tempo déjà à leur type le
+  plus dur du bloc. `quality~=5`/`highcost~=3`, le maximum du plan entier.
+- **Cause racine** : le cycle de charge (`BUILD_CYCLE_LOAD`, 4 semaines)
+  et la rotation de touche secondaire (`GENERIC_ROTATION`, 4 entrées)
+  placent toutes les deux leur entrée la plus exigeante à la même position
+  (la 3ᵉ semaine du cycle) — une coïncidence structurelle, pas une
+  décision de coaching. Rien ne consultait le registre des familles pour
+  éviter d'empiler deux stimuli marqués incompatibles.
+- **Correction moteur** (généralisée, ne cible pas "la semaine 8") :
+  `getSecondaryType` (`weeklyStimulusComposer.ts`) ne renvoie plus jamais
+  un type identique à l'ancre de la semaine, et sur une semaine `peak`, ne
+  renvoie jamais un type dont la famille est listée dans
+  `incompatibleNeighbors` de la famille de l'ancre — réutilise les
+  métadonnées déjà authored (`BIKE_SWEET_SPOT.incompatibleNeighbors`
+  contient déjà `'BIKE_VO2'`) plutôt qu'une nouvelle table "haut de
+  gamme" par discipline.
+- **Test de non-régression** : `buildWeekSessions.test.ts` — "never stacks
+  a VO2max secondary touch onto an already tier-bumped (peak) bike anchor".
+
+### 8. Le développement vélo/course "sortie longue" était structurellement inatteignable
+
+- **Comportement fautif** : l'ancre base-phase vélo/course, censée être
+  `long`, dégénérait en `endurance` classique presque toutes les semaines
+  — le développement de la durabilité longue n'avait jamais lieu.
+- **Cause racine (vélo)** : tous les gabarits `bike/long` en palier
+  `standard`/`peak` (150/175min) dépassent largement le plus grand jour
+  réaliste d'un athlète à ~6h/semaine (90min pour le Gold Standard) ; seul
+  le gabarit `reduced` (90min, réservé aux semaines de deload) rentrait —
+  rendant le développement "sortie longue" accidentellement réservé aux
+  semaines les plus légères.
+- **Cause racine (vélo vs course, jour partagé)** : vélo et course
+  réclament chacun le "grand jour" de la semaine pour leur ancre `long` ;
+  l'ancien départage (durée préférée décroissante) laissait la durée
+  **médiane du catalogue** décider — le vélo gagnait toujours, y compris
+  pour un athlète dont le *vélo* serait le limiteur, ce qui aurait dû
+  inverser le résultat.
+- **Correction moteur** : nouveau gabarit `bike-long-compact` (75min,
+  `tier: 'standard'`, même logique que la correction n°5) ; `claimDays`
+  (`buildWeekSessions.ts`) départage désormais par position
+  limiteur/plus-forte de l'athlète *avant* la durée préférée.
+- **Test de non-régression** : `buildWeekSessions.test.ts` — "gives the
+  big day to the limiter discipline's long anchor, not whichever
+  discipline the catalog happens to favor" (vérifie que le résultat
+  s'inverse entre deux athlètes aux limiteurs opposés).
+
+### 9. La progression brick à 3 étages collapsait en 2 séances identiques
+
+- **Scénario** : audit explicitement demandé par le brief (§21 — "un brick
+  isolé sur 16 semaines est-il vraiment suffisant ?"). Le moteur génère une
+  vraie escalade `BRICK_ADAPTATION → BRICK_SPECIFIC → BRICK_RACE_REHEARSAL`
+  sur la phase spécifique.
+- **Comportement fautif** : la semaine médiane (`BRICK_SPECIFIC`) et la
+  dernière semaine (`BRICK_RACE_REHEARSAL`) produisaient la **séance
+  identique** (même titre, même durée) — l'escalade finale était illusoire.
+- **Cause racine (double)** : (a) `BRICK_RACE_REHEARSAL` n'avait qu'un
+  gabarit de 130min, au-delà de tout jour réaliste, donc toujours
+  indisponible ; (b) le palier catalogue utilisé au placement était celui
+  de la semaine (son propre cycle de charge, sans rapport), pas celui de
+  l'étage brick — deux semaines de phase spécifique tombant par coïncidence
+  sur le même palier `peak` du cycle de charge produisaient donc le même
+  gabarit quel que soit l'étage réellement demandé.
+- **Correction moteur** : nouveau gabarit `brick-race-rehearsal-compact`
+  (90min, `tier: 'peak'`, escalade qualitative — pas seulement plus long) ;
+  `buildWeekSessions.ts` force désormais le palier vélo/course-brick selon
+  **l'étage brick réellement demandé** (`requirement.familyId`), pas selon
+  le palier générique de la semaine.
+- **Test de non-régression** : `buildWeekSessions.test.ts` — "gives
+  BRICK_SPECIFIC and BRICK_RACE_REHEARSAL genuinely different sessions
+  even on same-tier weeks" ; `goldStandard.test.ts`'s test de progression
+  brick vérifie désormais que **chaque** semaine spécifique a un titre
+  différent, pas seulement qu'il existe plus d'un titre distinct sur
+  l'ensemble de la phase (une assertion trop faible qui laissait passer ce
+  défaut).
+
+### 10. Le vélo disparaissait entièrement en semaine de course, et sa touche secondaire en affûtage
+
+- **Scénario** : audit de cohérence d'affûtage/course (brief §22).
+- **Comportement fautif** : la semaine de course ne contenait que natation
+  + course, jamais de vélo — alors que le compositeur demandait bien les
+  trois disciplines. En affûtage, la touche secondaire vélo (récupération)
+  disparaissait aussi silencieusement, gaspillant un jour déjà réservé.
+- **Cause racine** : contrairement à `SWIM_RECOVERY`/`RUN_RECOVERY`, **aucune
+  famille `BIKE_RECOVERY` n'existait dans le registre**
+  (`workoutFamilies.ts`) — alors que le gabarit `bike-recovery` existe
+  depuis toujours dans le catalogue. `getFamilyForSession('bike',
+  'recovery')` renvoyait donc systématiquement `undefined`, et
+  `generateWeeklySessionRequirements` abandonne silencieusement (`if
+  (!family) continue`) toute exigence sans famille résolue — sans
+  avertissement, sans dégradation visible, juste absente.
+- **Correction moteur** : ajout de la famille `BIKE_RECOVERY` manquante,
+  au même schéma que `SWIM_RECOVERY`/`RUN_RECOVERY`.
+- **Impact mesuré** : +3 séances sur le Gold Standard (une par semaine 14,
+  15, 16) — c'est le défaut au plus grand impact trouvé lors de cet audit :
+  un trou de registre silencieux, pas un réglage de justesse de coaching.
+- **Test de non-régression** : couvert par la régénération du Gold
+  Standard (le vélo apparaît désormais chaque semaine 14-16).
+
 ## Limitation connue
 
-`WEEKLY_SLOT_DISCIPLINES` reste une table fixe par nombre de jours — une
-deuxième touche natation n'est possible que si un créneau de la discipline
-la plus forte de l'athlète existe à sacrifier cette semaine-là (elle
-n'apparaît donc pas sur les semaines de brick, ni en dessous de 4-5 jours
-d'entraînement selon la discipline la plus forte). Documenté plutôt que
-silencieusement accepté — une restructuration plus profonde de cette table
-reste un candidat pour un futur milestone si un besoin plus général de
-troisièmes/quatrièmes touches par discipline émerge.
+La rotation de touche secondaire (`GENERIC_ROTATION`/`LIMITER_DEVELOPMENT_ROTATION`/
+`STRENGTH_MAINTENANCE_ROTATION`) et le cycle de charge
+(`BUILD_CYCLE_LOAD`) ont tous deux une longueur de 4 — un choix
+d'authoring, pas une contrainte du moteur. Les défauts n°7 et n°9 montrent
+que deux cycles de même longueur peuvent faire coïncider silencieusement
+leurs positions "les plus dures" ; les garde-fous ajoutés (comparaison de
+familles incompatibles, sélection de palier par étage plutôt que par
+semaine) corrigent les cas trouvés sans supposer qu'aucune autre
+coïncidence de ce type n'existe ailleurs — à surveiller lors d'un futur
+élargissement du catalogue ou des rotations.
