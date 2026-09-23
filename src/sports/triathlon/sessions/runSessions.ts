@@ -387,7 +387,7 @@ export const RUN_SESSIONS: SessionTemplate[] = [
   {
     id: 'run-easy-strides',
     discipline: 'run',
-    sessionType: 'endurance',
+    sessionType: 'technique',
     tier: 'standard',
     title: 'Footing facile + lignes droites',
     objective:
