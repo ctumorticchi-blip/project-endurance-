@@ -29,6 +29,21 @@ vient-il de changer ?*
 Le sentiment recherché : **« Mon programme me connaît »** — pas « j'ai
 téléchargé un plan de 12 semaines ».
 
+## Ce que "programme" veut dire (Training Intelligence V2)
+
+> Project Endurance ne génère pas un calendrier de séances. Il prescrit une
+> **progression de stimuli d'entraînement** pour un athlète précis, vers
+> une course précise, et adapte cette progression selon la réponse réelle
+> de l'athlète.
+
+Une bonne programmation n'est pas une collection de bonnes séances : c'est
+une progression cohérente de stimuli. Voir `docs/coaching-methodology.md`
+pour le pipeline complet (modèle athlète → analyse limiteur/force → phase
+→ besoins hebdomadaires → allocation → famille de séance → niveau de
+progression → prescription individuelle → placement calendrier → réponse
+de l'athlète → décision suivante) et le principe "le triathlon n'est pas
+trois plans séparés" (`docs/weekly-composer.md`).
+
 ## Vision business
 
 Nous ne vendons pas un plan (qui se termine après la course), mais un

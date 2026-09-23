@@ -113,6 +113,13 @@ réel (volume facile + un ou deux stimulus intenses, pas uniquement du
 rotation est désactivée : la séance secondaire redevient le choix calme par
 défaut, cohérent avec l'objectif d'une semaine de récupération.
 
+**Depuis Training Intelligence V2**, cette rotation n'est plus identique
+pour tous les athlètes : elle est biaisée par l'analyse limiteur/force de
+l'athlète (`getLimiterAdjustedRotation`) — voir `docs/weekly-composer.md`
+pour le détail complet du pipeline de composition hebdomadaire (analyse
+limiteur, rotation ajustée, priorité de réclamation des jours pour la
+natation et le brick).
+
 ## Écran central : Aujourd'hui
 
 Le moteur de coaching (`engine/coach`) répond chaque jour à trois questions :

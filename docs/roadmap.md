@@ -110,6 +110,35 @@ de charge existants — voir `docs/running-engine.md` (architecture) et
 Swimming (M7/M8) suivront le même schéma une fois Running validé en
 conditions réelles.
 
+## Training Intelligence V2 — qualité de coaching triathlon (terminé)
+
+Réalisé après M6 (Running), avant la poursuite du multisport (M7+) :
+recentrage volontaire sur la **qualité de la programmation triathlon**
+plutôt que sur de nouvelles fonctionnalités — brief : "ne génère pas un
+calendrier de séances, prescris une progression de stimuli". Voir
+`docs/coaching-methodology.md` pour le pipeline complet.
+
+| Phase | Contenu | Statut |
+|---|---|---|
+| A | Audit du moteur existant contre le nouveau brief | ✅ |
+| B | Modèle de domaine : classification de preuves, types de base V2 | ✅ |
+| C | Modèle athlète V2 par discipline (déjà en place, étendu) | ✅ |
+| D | Architecture Workout Family (`docs/workout-families.md`) | ✅ |
+| E | Moteur de progression : 5 décisions, échelles (`docs/progression-engine.md`) | ✅ |
+| F | Weekly Stimulus Composer (`docs/weekly-composer.md`) | ✅ |
+| G | Câblage du composer dans le générateur triathlon + système de séances clé | ✅ |
+| H | Modèle d'intensité : intention vs. mesure (`docs/intensity-model.md`) | ✅ |
+| I | Moteur de réponse athlète + intégration adaptation/affûtage/vie réelle | ✅ |
+| J | Athlète Gold Standard 16 semaines + matrice de 15 scénarios de benchmark (`docs/gold-standard.md`) — 3 défauts de coaching réels trouvés et corrigés (voir le Coaching Defect Log) | ✅ |
+| K | UX minimale : pourquoi cette semaine, pourquoi cette progression | ✅ |
+| L | Documentation complète | ✅ |
+| M | Quality gate final, QA navigateur, rapport final | ✅ |
+
+**Stop gate atteint** : aucune nouvelle fonctionnalité au-delà de ce
+périmètre (pas de refonte visuelle, pas de fonctionnalité sociale, pas de
+chat IA, pas d'intégration Garmin/Strava) tant que ce milestone n'a pas été
+revu.
+
 ## M10 — Endurance Platform
 
 Un utilisateur peut avoir successivement un objectif running, puis

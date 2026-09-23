@@ -3,6 +3,24 @@
 Module : `engine/adaptation`. Décide comment le plan doit réagir à ce qui se
 passe réellement (séance faite ou non, ressenti, disponibilité changée).
 
+**Distinct du moteur de progression** (`engine/progression`,
+`docs/progression-engine.md`) : ce module réagit à *aujourd'hui*, une
+séance en particulier ; le moteur de progression réagit à la *tendance*
+d'une famille de séance sur plusieurs expositions et décide ce que la
+*prochaine* prescription de cette famille doit cibler. Les deux peuvent se
+déclencher le même jour sans se contredire — voir
+`docs/coaching-methodology.md` "Deux systèmes de décision".
+
+## Protection de l'affûtage (Training Intelligence V2)
+
+`decideAdaptation`/`decideUpcomingSession` acceptent un flag `isRaceWeek` :
+pendant la semaine de course, toute décision basée sur le readiness/RPE du
+jour est court-circuitée en `KEEP` avec le reason code `TAPER_PROTECTION` —
+la semaine de course est délibérément précise et légère, un ressenti isolé
+ne doit pas y toucher (brief §26). Une séance réellement manquée pendant
+cette semaine continue de recevoir une vraie décision
+(MOVE/REPLACE/REMOVE) : seul le chemin readiness/RPE est protégé.
+
 ## Décisions possibles
 
 ```

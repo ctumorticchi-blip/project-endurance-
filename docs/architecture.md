@@ -30,10 +30,22 @@ src/
     availability/ Availability, exceptions
     training/     WorkoutBlock, PlannedSession, TrainingPlan/Phase/Week
     history/      CompletedSession, SessionFeedback, ReadinessCheck
+    coaching/     Training Intelligence V2 — types sport-agnostiques :
+                  EvidenceClassification, StimulusPriority, WorkoutFamily,
+                  FamilyProgressionState (voir docs/progression-engine.md,
+                  docs/workout-families.md)
   engine/         Moteur de coaching, indépendant de React et du sport
     coach/        Orchestration : décide quoi montrer/faire aujourd'hui
     planning/     Génération de plan (périodisation à rebours)
-    adaptation/   Moteur d'adaptation (KEEP/REDUCE/INCREASE/MOVE/REPLACE/REMOVE)
+    adaptation/   Moteur d'adaptation (KEEP/REDUCE/INCREASE/MOVE/REPLACE/REMOVE) —
+                  réagit à *aujourd'hui* (docs/adaptation-engine.md)
+    progression/  Moteur de progression (PROGRESS/MAINTAIN/REGRESS/RECOVER/
+                  RECALIBRATE) — réagit à la *tendance* d'une famille de
+                  séance sur plusieurs expositions (docs/progression-engine.md).
+                  Distinct de `adaptation/` : voir docs/coaching-methodology.md
+                  "Deux systèmes de décision"
+    intensity/    Sépare intention d'entraînement (zone relative) et méthode
+                  de mesure (puissance/allure/FC/RPE) — docs/intensity-model.md
     metrics/      Charge, tendances, calculs dérivés
     calibration/  FTP / CSS / seuil course, tests terrain
     recovery/     Fatigue, readiness
@@ -43,6 +55,10 @@ src/
       domain/     Types spécifiques triathlon
       planning/   Règles de construction de plan triathlon
       sessions/   Catalogue de séances
+      coaching/   Instanciation triathlon de Training Intelligence V2 :
+                  limiterAnalysis (analyse limiteur/force), workoutFamilies
+                  (registre concret des familles), weeklyStimulusComposer
+                  (rotation ajustée au limiteur) — voir docs/weekly-composer.md
       swimming/ cycling/ running/ bricks/ strength/ mobility/
   features/       Écrans (composés du moteur + de l'UI)
     onboarding/ today/ plan/ session-player/ feedback/ progress/ profile/
