@@ -1,3 +1,4 @@
+import type { AthleteProfile } from '@/core/athlete/AthleteProfile'
 import type { Availability } from '@/core/availability/Availability'
 import type { TriathlonRaceGoal } from '@/core/goals/RaceGoal'
 import { findWeekForDate, type TrainingPlan, type TrainingWeek } from '@/core/training/TrainingPlan'
@@ -21,6 +22,7 @@ export function regeneratePlanFromToday(input: {
   currentPlan: TrainingPlan
   raceGoal: TriathlonRaceGoal
   availability: Availability
+  athleteProfile: AthleteProfile
   today?: Date
 }): RegeneratePlanResult {
   const today = input.today ?? new Date()
@@ -33,6 +35,7 @@ export function regeneratePlanFromToday(input: {
   const { plan: freshPlan, warnings } = generateTrainingPlan({
     raceGoal: input.raceGoal,
     availability: input.availability,
+    athleteProfile: input.athleteProfile,
     today,
   })
 

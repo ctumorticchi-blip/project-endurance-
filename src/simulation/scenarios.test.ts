@@ -16,6 +16,19 @@ import { generateTrainingPlan } from '@/sports/triathlon/planning/generateTraini
 import { TRIATHLON_DISTANCES } from '@/sports/triathlon/domain/distance'
 import type { Weekday } from '@/shared/types/common'
 
+/** A balanced intermediate triathlete — used wherever a scenario doesn't
+ * care about limiter-specific behavior (Training Intelligence V2's
+ * weekly stimulus composer needs an `AthleteProfile` to compose from). */
+const TEST_ATHLETE_PROFILE = createAthleteProfile({
+  sport: 'triathlon',
+  generalSportExperience: 'intermediate',
+  triathlonExperience: 'some-races',
+  disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
+  equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+  knownMetrics: {},
+  biometrics: {},
+})
+
 /**
  * End-to-end coherence checks across realistic athlete scenarios (brief
  * §57/§48-49) — not unit tests of one function, but "generate a plan, put
@@ -62,17 +75,8 @@ describe('Scenario A — Triathlon Sprint, intermediate, ~12 weeks, 5 sessions/w
     const raceDate = '2026-03-30' // ~12 weeks out
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate })
     const availability = fullAvailability(5, 75)
-    createAthleteProfile({
-      sport: 'triathlon',
-      generalSportExperience: 'intermediate',
-      triathlonExperience: 'some-races',
-      disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
-      equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
-      knownMetrics: {},
-      biometrics: {},
-    })
 
-    const { plan } = generateTrainingPlan({ raceGoal, availability, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability, athleteProfile: TEST_ATHLETE_PROFILE, today })
     assertPlanInvariants(plan, availability, raceDate)
     expect(plan.weeks.length).toBeGreaterThanOrEqual(11)
 
@@ -113,7 +117,7 @@ describe('Scenario B — Triathlon Olympic ("M"), intermediate, ~20 weeks, 6 ses
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate })
     const availability = fullAvailability(6, 60)
 
-    const { plan } = generateTrainingPlan({ raceGoal, availability, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability, athleteProfile: TEST_ATHLETE_PROFILE, today })
     assertPlanInvariants(plan, availability, raceDate)
 
     const taperWeeks = plan.weeks.filter((w) => w.phase === 'taper')
@@ -144,7 +148,7 @@ describe('Scenario C — first Sprint, low volume, 3-4 sessions/week', () => {
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate })
     const availability = fullAvailability(3, 45)
 
-    const { plan, warnings } = generateTrainingPlan({ raceGoal, availability, today })
+    const { plan, warnings } = generateTrainingPlan({ raceGoal, availability, athleteProfile: TEST_ATHLETE_PROFILE, today })
     expect(warnings.length).toBeGreaterThan(0)
     assertPlanInvariants(plan, availability, raceDate)
 
@@ -175,7 +179,7 @@ describe('Scenario D — athlete with many availability constraints', () => {
       ],
     }
 
-    const { plan } = generateTrainingPlan({ raceGoal, availability, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability, athleteProfile: TEST_ATHLETE_PROFILE, today })
     assertPlanInvariants(plan, availability, raceDate)
     expect(allSessions(plan).some((s) => s.date === '2026-01-17')).toBe(false)
   })

@@ -1,3 +1,4 @@
+import type { AthleteProfile } from '@/core/athlete/AthleteProfile'
 import type { Availability } from '@/core/availability/Availability'
 import { daysUntilRace, type TriathlonRaceGoal } from '@/core/goals/RaceGoal'
 import { createTrainingPlan, type TrainingPhaseName, type TrainingPlan, type TrainingWeek } from '@/core/training/TrainingPlan'
@@ -10,6 +11,13 @@ import { allocatePhases } from './phaseAllocation'
 export interface GenerateTrainingPlanInput {
   raceGoal: TriathlonRaceGoal
   availability: Availability
+  /**
+   * Required so the Weekly Stimulus Composer can bias each week's
+   * secondary-touch rotation toward the athlete's own limiter discipline
+   * instead of every triathlete getting an identical rotation (Training
+   * Intelligence V2 — see `sports/triathlon/coaching/limiterAnalysis.ts`).
+   */
+  athleteProfile: AthleteProfile
   today?: Date
 }
 
@@ -66,6 +74,7 @@ export function generateTrainingPlan(
       weeksInPhase: weeksInPhase.get(phase) ?? 1,
       weekId,
       availability: input.availability,
+      athleteProfile: input.athleteProfile,
     })
 
     weeks.push({

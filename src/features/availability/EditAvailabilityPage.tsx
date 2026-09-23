@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AthleteProfileRepository } from '@/core/athlete/AthleteProfileRepository'
 import { AvailabilityRepository } from '@/core/availability/AvailabilityRepository'
 import type { Availability, DayAvailability } from '@/core/availability/Availability'
 import { RaceGoalRepository } from '@/core/goals/RaceGoalRepository'
@@ -16,11 +17,12 @@ export function EditAvailabilityPage() {
   const availability = AvailabilityRepository.load()
   const raceGoal = RaceGoalRepository.load()
   const currentPlan = TrainingPlanRepository.load()
+  const athleteProfile = AthleteProfileRepository.load()
 
   const [draft, setDraft] = useState<Availability | undefined>(availability)
   const [saved, setSaved] = useState(false)
 
-  if (!availability || !raceGoal || !currentPlan || !draft) {
+  if (!availability || !raceGoal || !currentPlan || !draft || !athleteProfile) {
     return (
       <PlaceholderPage
         title="Disponibilités"
@@ -40,7 +42,7 @@ export function EditAvailabilityPage() {
     AvailabilityRepository.save(draft)
     const { plan } =
       raceGoal.sport === 'triathlon'
-        ? regenerateTriathlonPlanFromToday({ currentPlan, raceGoal, availability: draft })
+        ? regenerateTriathlonPlanFromToday({ currentPlan, raceGoal, availability: draft, athleteProfile })
         : regenerateRunningPlanFromToday({ currentPlan, raceGoal, availability: draft })
     TrainingPlanRepository.save(plan)
     setSaved(true)

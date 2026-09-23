@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest'
+import { createAthleteProfile } from '@/core/athlete/AthleteProfile'
 import { createEmptyWeeklyPattern, type Availability } from '@/core/availability/Availability'
 import { buildWeekSessions } from './buildWeekSessions'
+
+/** A balanced intermediate triathlete — keeps every test in this file on
+ * the pre-Training-Intelligence-V2 generic rotation (no limiter/strongest
+ * bias), so existing assertions about the rotation's own behavior stay
+ * meaningful. Limiter-specific behavior is covered in
+ * `sports/triathlon/coaching/weeklyStimulusComposer.test.ts`. */
+const TEST_ATHLETE_PROFILE = createAthleteProfile({
+  sport: 'triathlon',
+  generalSportExperience: 'intermediate',
+  triathlonExperience: 'some-races',
+  disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
+  equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+  knownMetrics: {},
+  biometrics: {},
+})
 
 function availabilityAllDays(minutes: number): Availability {
   const pattern = createEmptyWeeklyPattern()
@@ -23,6 +39,7 @@ describe('buildWeekSessions', () => {
       weekIndexInPhase: 0,
       weekId: 'week-1',
       availability: availabilityAllDays(60),
+      athleteProfile: TEST_ATHLETE_PROFILE,
     })
 
     for (const session of sessions) {
@@ -40,6 +57,7 @@ describe('buildWeekSessions', () => {
       weekIndexInPhase: 0,
       weekId: 'week-1',
       availability: availabilityAllDays(180),
+      athleteProfile: TEST_ATHLETE_PROFILE,
     })
 
     const longBike = sessions.find((s) => s.discipline === 'bike' && s.sessionType === 'long')
@@ -55,6 +73,7 @@ describe('buildWeekSessions', () => {
         weekIndexInPhase: 0,
         weekId: 'week-1',
         availability,
+        athleteProfile: TEST_ATHLETE_PROFILE,
       })
     }
 
@@ -143,6 +162,7 @@ describe('buildWeekSessions', () => {
         weeksInPhase,
         weekId: `week-${weekIndexInPhase}`,
         availability: availabilityAllDays(120),
+        athleteProfile: TEST_ATHLETE_PROFILE,
       })
     }
 
@@ -166,6 +186,7 @@ describe('buildWeekSessions', () => {
         weeksInPhase: 8,
         weekId: 'week-a',
         availability: availabilityAllDays(180),
+        athleteProfile: TEST_ATHLETE_PROFILE,
       }).find((s) => s.discipline === 'bike' && s.sessionType === 'long')
       const weekB = buildWeekSessions({
         weekStart: '2026-01-05',
@@ -175,6 +196,7 @@ describe('buildWeekSessions', () => {
         weeksInPhase: 8,
         weekId: 'week-b',
         availability: availabilityAllDays(180),
+        athleteProfile: TEST_ATHLETE_PROFILE,
       }).find((s) => s.discipline === 'bike' && s.sessionType === 'long')
 
       expect(weekA).toBeDefined()
@@ -193,6 +215,7 @@ describe('buildWeekSessions', () => {
           weeksInPhase: 8,
           weekId: `week-${i}`,
           availability: availabilityAllDays(120),
+          athleteProfile: TEST_ATHLETE_PROFILE,
         })
         const bikeSessions = sessions.filter((s) => s.discipline === 'bike')
         const secondary = bikeSessions.find((s) => s.priority !== 'key')

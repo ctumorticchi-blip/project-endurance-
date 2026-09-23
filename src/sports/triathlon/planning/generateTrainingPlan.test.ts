@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest'
+import { createAthleteProfile } from '@/core/athlete/AthleteProfile'
 import { createAvailabilityException, createEmptyWeeklyPattern, getAvailableMinutes, type Availability } from '@/core/availability/Availability'
 import { createRaceGoal } from '@/core/goals/RaceGoal'
 import { allSessions } from '@/core/training/TrainingPlan'
 import { WEEKDAYS } from '@/shared/types/common'
 import { generateTrainingPlan } from './generateTrainingPlan'
+
+/** A balanced intermediate triathlete — the Weekly Stimulus Composer needs
+ * an `AthleteProfile` to compose from (Training Intelligence V2). */
+const TEST_ATHLETE_PROFILE = createAthleteProfile({
+  sport: 'triathlon',
+  generalSportExperience: 'intermediate',
+  triathlonExperience: 'some-races',
+  disciplineLevels: { swim: 'intermediate', bike: 'intermediate', run: 'intermediate' },
+  equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+  knownMetrics: {},
+  biometrics: {},
+})
 
 function availabilityWithDays(
   days: { weekday: (typeof WEEKDAYS)[number]; minutes: number; pool?: boolean }[],
@@ -27,7 +40,7 @@ describe('generateTrainingPlan', () => {
   it('produces exactly as many weeks as fit between today and the race, ending on race week', () => {
     const today = new Date('2026-01-05T00:00:00') // a Monday
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' }) // ~12 weeks out
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     expect(plan.weeks.at(-1)?.phase).toBe('race')
     expect(plan.weeks.filter((w) => w.phase === 'race')).toHaveLength(1)
@@ -36,7 +49,7 @@ describe('generateTrainingPlan', () => {
   it('never schedules a session that exceeds that day\'s declared availability', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-06-01' })
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     for (const session of allSessions(plan)) {
       const available = getAvailableMinutes(FIVE_DAY_AVAILABILITY, session.date)
@@ -47,7 +60,7 @@ describe('generateTrainingPlan', () => {
   it('never schedules a session on or after the race date', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     for (const session of allSessions(plan)) {
       expect(session.date < raceGoal.raceDate).toBe(true)
@@ -63,14 +76,14 @@ describe('generateTrainingPlan', () => {
         createAvailabilityException({ date: '2026-01-10', type: 'unavailable', reason: 'travel' }),
       ],
     }
-    const { plan } = generateTrainingPlan({ raceGoal, availability, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability, athleteProfile: TEST_ATHLETE_PROFILE, today })
     expect(allSessions(plan).some((s) => s.date === '2026-01-10')).toBe(false)
   })
 
   it('taper reduces average weekly load compared to the peak week beforehand', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-08-01' }) // long runway
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     const nonTaperWeeks = plan.weeks.filter((w) => w.phase !== 'taper' && w.phase !== 'race')
     const taperWeeks = plan.weeks.filter((w) => w.phase === 'taper')
@@ -84,7 +97,7 @@ describe('generateTrainingPlan', () => {
   it('includes every core discipline across the plan when pool access exists', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-08-01' })
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     const disciplines = new Set(allSessions(plan).map((s) => s.discipline))
     expect(disciplines.has('swim')).toBe(true)
@@ -95,14 +108,14 @@ describe('generateTrainingPlan', () => {
   it('warns when the runway is too short for the distance instead of generating an aggressive plan', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-01-26' }) // 3 weeks out
-    const { warnings } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { warnings } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
     expect(warnings.length).toBeGreaterThan(0)
   })
 
   it('evolves week to week within a phase instead of repeating an identical week (real progression + deload)', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-08-01' }) // long runway
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
 
     const buildWeeks = plan.weeks.filter((w) => w.phase === 'build')
     expect(buildWeeks.length).toBeGreaterThanOrEqual(4)
@@ -117,10 +130,63 @@ describe('generateTrainingPlan', () => {
     expect(Math.min(...loads)).toBeLessThan(peak * 0.85)
   })
 
+  it('gives two athletes preparing the identical race meaningfully different programs based on their own limiters (Training Intelligence V2 success criterion #1)', () => {
+    const today = new Date('2026-01-05T00:00:00')
+    const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'olympic', raceDate: '2026-08-01' }) // long runway, plenty of build/specific weeks
+
+    const weakSwimmer = createAthleteProfile({
+      sport: 'triathlon',
+      generalSportExperience: 'intermediate',
+      triathlonExperience: 'some-races',
+      disciplineLevels: { swim: 'beginner', bike: 'intermediate', run: 'advanced' },
+      equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+      knownMetrics: {},
+      biometrics: {},
+    })
+    const weakRunner = createAthleteProfile({
+      sport: 'triathlon',
+      generalSportExperience: 'intermediate',
+      triathlonExperience: 'some-races',
+      disciplineLevels: { swim: 'advanced', bike: 'intermediate', run: 'beginner' },
+      equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+      knownMetrics: {},
+      biometrics: {},
+    })
+
+    const swimmerPlan = generateTrainingPlan({
+      raceGoal,
+      availability: FIVE_DAY_AVAILABILITY,
+      athleteProfile: weakSwimmer,
+      today,
+    }).plan
+    const runnerPlan = generateTrainingPlan({
+      raceGoal,
+      availability: FIVE_DAY_AVAILABILITY,
+      athleteProfile: weakRunner,
+      today,
+    }).plan
+
+    const runSessionTypes = (plan: typeof swimmerPlan) =>
+      allSessions(plan)
+        .filter((s) => s.discipline === 'run')
+        .map((s) => s.sessionType)
+
+    // Run is the weak runner's limiter (development-weighted rotation) but
+    // the weak swimmer's strength (maintenance-only rotation) — the exact
+    // same race, phase, and availability produce a genuinely different run
+    // program depending on which athlete it's for.
+    const runnerRunTypes = new Set(runSessionTypes(runnerPlan))
+    const swimmerRunTypes = new Set(runSessionTypes(swimmerPlan))
+    expect(runnerRunTypes.has('technique')).toBe(true)
+    // The strong-run athlete's run secondary rotation never reaches for
+    // 'long'/'intervals' the way a non-strength discipline's would.
+    expect(swimmerRunTypes.has('long') && swimmerRunTypes.has('intervals')).toBe(false)
+  })
+
   it('produces no negative-duration sessions', () => {
     const today = new Date('2026-01-05T00:00:00')
     const raceGoal = createRaceGoal({ sport: 'triathlon', distance: 'sprint', raceDate: '2026-03-30' })
-    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, today })
+    const { plan } = generateTrainingPlan({ raceGoal, availability: FIVE_DAY_AVAILABILITY, athleteProfile: TEST_ATHLETE_PROFILE, today })
     for (const session of allSessions(plan)) {
       expect(session.estimatedDurationMin).toBeGreaterThan(0)
     }

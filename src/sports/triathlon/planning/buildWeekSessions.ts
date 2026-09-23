@@ -1,3 +1,4 @@
+import type { AthleteProfile } from '@/core/athlete/AthleteProfile'
 import {
   getAvailableMinutes,
   hasPoolAccess,
@@ -7,6 +8,7 @@ import {
 } from '@/core/availability/Availability'
 import type { PlannedSession } from '@/core/training/PlannedSession'
 import type { TrainingPhaseName } from '@/core/training/TrainingPlan'
+import { analyzeLimiters } from '@/sports/triathlon/coaching/limiterAnalysis'
 import type { DateISO, Discipline } from '@/shared/types/common'
 import { addDays } from '@/shared/utils/date'
 import { instantiateSessionTemplate } from '../sessions'
@@ -15,6 +17,7 @@ import { getSessionTier, getWeekLoadMultiplier } from './progressionCurve'
 import {
   applyBrickInsertion,
   getSecondaryType,
+  PRIMARY_BRICK_TYPE_BY_PHASE,
   PRIMARY_SESSION_TYPE_BY_PHASE,
   shouldInsertBrick,
   WEEKLY_SLOT_DISCIPLINES,
@@ -33,6 +36,13 @@ export interface BuildWeekSessionsInput {
   weeksInPhase?: number
   weekId: string
   availability: Availability
+  /**
+   * Required for Training Intelligence V2's limiter-aware composition (see
+   * `sports/triathlon/coaching/weeklyStimulusComposer.ts`) — without it,
+   * every athlete gets the identical secondary-touch rotation regardless
+   * of their own declared swim/bike/run levels.
+   */
+  athleteProfile: AthleteProfile
 }
 
 /** Below this, a "session" would be too short to be worth prescribing. */
@@ -47,6 +57,7 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     weeksInPhase = 4,
     weekId,
     availability,
+    athleteProfile,
   } = input
 
   // Where this week sits on its phase's load curve — see
@@ -54,6 +65,12 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   // overload within a block, a deload week, a descending taper).
   const loadMultiplier = getWeekLoadMultiplier(phase, weekIndexInPhase, weeksInPhase)
   const tier = getSessionTier(loadMultiplier)
+
+  // Computed once per week — see limiterAnalysis.ts. Cheap, pure, and the
+  // single input that makes the secondary-touch rotation below athlete-aware
+  // instead of identical for every triathlete regardless of their own
+  // declared swim/bike/run levels (Training Intelligence V2).
+  const limiterAnalysis = analyzeLimiters(athleteProfile)
 
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter(
     (date) => date < planEndDateExclusive,
@@ -135,9 +152,9 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
       effectiveDiscipline === 'bike' || effectiveDiscipline === 'run' || effectiveDiscipline === 'swim'
         ? effectiveOccurrence === 0
           ? PRIMARY_SESSION_TYPE_BY_PHASE[phase][effectiveDiscipline]
-          : getSecondaryType(phase, effectiveDiscipline, weekIndexInPhase, tier)
+          : getSecondaryType(phase, effectiveDiscipline, weekIndexInPhase, tier, limiterAnalysis)
         : effectiveDiscipline === 'brick'
-          ? 'brick'
+          ? PRIMARY_BRICK_TYPE_BY_PHASE[phase]
           : undefined
 
     const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes, {

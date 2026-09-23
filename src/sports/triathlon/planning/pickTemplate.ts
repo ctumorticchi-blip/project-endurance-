@@ -15,7 +15,13 @@ const EASY_FALLBACK_BY_DISCIPLINE: Partial<Record<Discipline, SessionType[]>> = 
   bike: ['endurance', 'recovery'],
   run: ['endurance', 'recovery'],
   swim: ['endurance', 'technique', 'recovery'],
-  brick: ['transition'],
+  // A race-specific brick that doesn't fit the day's time degrades to the
+  // shorter standard brick before the very different, low-value transition
+  // drill (coaching defect found during Training Intelligence V2: the
+  // preferred type used to always be the literal 'brick', so the
+  // 'race-specific' brick template was unreachable by the generator at all
+  // — see docs/coaching-methodology.md's defect log).
+  brick: ['brick', 'transition'],
 }
 
 export interface PickTemplateOptions {

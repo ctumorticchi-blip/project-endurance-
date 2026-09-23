@@ -101,7 +101,7 @@ export function submitOnboarding(draft: OnboardingDraft): { planWarnings: string
   RaceGoalRepository.save(raceGoal)
   AvailabilityRepository.save(availability)
 
-  const { plan, warnings } = generateTrainingPlan({ raceGoal, availability })
+  const { plan, warnings } = generateTrainingPlan({ raceGoal, availability, athleteProfile: profile })
   TrainingPlanRepository.save(plan)
 
   return { planWarnings: warnings }
