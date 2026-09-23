@@ -62,7 +62,13 @@ et jamais un chiffre fabriqué quand le test sous-jacent n'a pas été fait
 
 ## Utilisation
 
-Appelé partout où un bloc doit être affiché avec une cible concrète plutôt
-que seulement une zone abstraite — remplace un futur besoin d'ajouter cette
-logique séparément à chaque écran (Aujourd'hui, détail de séance, lecteur
-de séance).
+**Depuis Coaching Experience V1**, effectivement appelé partout où un bloc
+est affiché avec une cible concrète plutôt que seulement une zone
+abstraite — via `shared/utils/intensityDisplay.ts`'s
+`resolveBlockTargetDescription`, utilisé par le seul renderer de structure
+de séance (`shared/components/SessionBlockList.tsx`), lui-même réutilisé
+par Aujourd'hui, le détail d'un jour du Programme, et le Workout Player.
+Avant ce milestone, ce module était entièrement construit et testé mais
+n'était appelé depuis aucun écran — un défaut d'intégration corrigé et
+documenté dans `docs/coaching-experience.md`'s Coaching Experience Defect
+Log (#4).
