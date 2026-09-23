@@ -204,7 +204,11 @@ describe('buildWeekSessions', () => {
       expect(weekA!.title).not.toBe(weekB!.title)
     })
 
-    it('injects a long-endurance or VO2max secondary touch in build/specific instead of always the same grey-zone type', () => {
+    it('injects a long-endurance secondary touch in build/specific instead of always the same grey-zone type', () => {
+      // 180min/day so the rotation's 'long' entry (bike-long standard tier
+      // is 150min) can actually fit and isn't itself degraded to
+      // 'endurance' by duration alone — isolates genuine rotation
+      // diversity from a duration-fallback artifact.
       const secondaryTypesAcrossCycle = new Set<string>()
       for (let i = 0; i < 4; i++) {
         const sessions = buildWeekSessions({
@@ -214,7 +218,7 @@ describe('buildWeekSessions', () => {
           weekIndexInPhase: i,
           weeksInPhase: 8,
           weekId: `week-${i}`,
-          availability: availabilityAllDays(120),
+          availability: availabilityAllDays(180),
           athleteProfile: TEST_ATHLETE_PROFILE,
         })
         const bikeSessions = sessions.filter((s) => s.discipline === 'bike')
@@ -222,6 +226,33 @@ describe('buildWeekSessions', () => {
         if (secondary) secondaryTypesAcrossCycle.add(secondary.sessionType)
       }
       expect(secondaryTypesAcrossCycle.size).toBeGreaterThan(1)
+    })
+
+    // Training Intelligence V2.1 (brief §16, Week 8 audit): the build
+    // cycle's toughest ('peak') week and the generic rotation's top-end
+    // ('vo2max'/'intervals') entry both land on the cycle's 3rd week by
+    // design — before this fix that meant a bike-neutral athlete's peak
+    // week always compounded an already-harder Sweet Spot anchor with a
+    // second, independently demanding VO2max touch. The engine must never
+    // reproduce that stack, on any cycle length or availability.
+    it('never stacks a VO2max secondary touch onto an already tier-bumped (peak) bike anchor', () => {
+      for (let i = 0; i < 8; i++) {
+        const sessions = buildWeekSessions({
+          weekStart: '2026-01-05',
+          planEndDateExclusive: '2027-01-01',
+          phase: 'build',
+          weekIndexInPhase: i,
+          weeksInPhase: 8,
+          weekId: `week-${i}`,
+          availability: availabilityAllDays(180),
+          athleteProfile: TEST_ATHLETE_PROFILE,
+        })
+        const anchor = sessions.find((s) => s.discipline === 'bike' && s.priority === 'key')
+        const secondary = sessions.find((s) => s.discipline === 'bike' && s.priority !== 'key')
+        if (anchor?.title.includes('semaine de pointe')) {
+          expect(secondary?.sessionType).not.toBe('vo2max')
+        }
+      }
     })
   })
 
@@ -281,6 +312,35 @@ describe('buildWeekSessions', () => {
       const swim = sessions.find((s) => s.discipline === 'swim')
       expect(swim).toBeDefined()
       expect(['2026-10-13', '2026-10-15']).toContain(swim!.date) // Tuesday or Thursday — the only pool days
+    })
+
+    // Training Intelligence V2.1 (brief §21, brick-progression audit): the
+    // mid-phase BRICK_SPECIFIC week and the final BRICK_RACE_REHEARSAL week
+    // must produce genuinely different sessions even when the specific
+    // phase's own load curve happens to put both weeks at 'peak' tier —
+    // before the fix, both requests were promoted to whichever
+    // 'race-specific' template fit the day at the week's *generic*
+    // periodization tier, so they silently collapsed into the identical
+    // 90min session on a realistic (90min biggest-day) week.
+    it('gives BRICK_SPECIFIC and BRICK_RACE_REHEARSAL genuinely different sessions even on same-tier weeks', () => {
+      const specificWeek = (weekIndexInPhase: number) =>
+        buildWeekSessions({
+          weekStart: '2026-10-12',
+          planEndDateExclusive: '2027-01-01',
+          phase: 'specific',
+          weekIndexInPhase,
+          weeksInPhase: 3,
+          weekId: `week-specific-${weekIndexInPhase}`,
+          availability: unevenAvailability(),
+          athleteProfile: TEST_ATHLETE_PROFILE,
+        })
+
+      const midPhaseBrick = specificWeek(1).find((s) => s.discipline === 'brick') // BRICK_SPECIFIC
+      const lastWeekBrick = specificWeek(2).find((s) => s.discipline === 'brick') // BRICK_RACE_REHEARSAL
+
+      expect(midPhaseBrick).toBeDefined()
+      expect(lastWeekBrick).toBeDefined()
+      expect(lastWeekBrick!.title).not.toBe(midPhaseBrick!.title)
     })
   })
 
@@ -349,6 +409,77 @@ describe('buildWeekSessions', () => {
       })
 
       expect(sessions.some((s) => s.discipline === 'strength')).toBe(false)
+    })
+  })
+
+  describe('the single "big day" a week is shared between competing long-type anchors (Training Intelligence V2.1 audit §19)', () => {
+    /** Only one day is big enough for a genuine bike-long OR run-long
+     * anchor (90min); every other day is too short for either. Forces the
+     * two base-phase 'long' anchors to compete for the same day. */
+    function oneBigDayAvailability(): Availability {
+      const pattern = createEmptyWeeklyPattern()
+      pattern.tuesday = { available: true, minutes: 60, poolAccess: true }
+      pattern.wednesday = { available: true, minutes: 45, poolAccess: false }
+      pattern.thursday = { available: true, minutes: 60, poolAccess: true }
+      pattern.friday = { available: true, minutes: 45, poolAccess: false }
+      pattern.saturday = { available: true, minutes: 90, poolAccess: false }
+      pattern.sunday = { available: true, minutes: 45, poolAccess: false }
+      return { weeklyPattern: pattern, exceptions: [], restDays: ['monday'] }
+    }
+
+    function athleteWith(limiterDiscipline: 'bike' | 'run', strongestDiscipline: 'bike' | 'run') {
+      return createAthleteProfile({
+        sport: 'triathlon',
+        generalSportExperience: 'intermediate',
+        triathlonExperience: 'some-races',
+        disciplineLevels: {
+          swim: 'intermediate',
+          [limiterDiscipline]: 'beginner',
+          [strongestDiscipline]: 'advanced',
+        } as Record<'swim' | 'bike' | 'run', 'beginner' | 'intermediate' | 'advanced'>,
+        equipment: { hasPoolAccess: true, hasBike: true, hasHomeTrainer: false },
+        knownMetrics: {},
+        biometrics: {},
+      })
+    }
+
+    /** Coaching defect found during the V2.1 audit: the old duration-only
+     * tie-break in `claimDays` let the catalog's own median authored
+     * duration per discipline decide who gets the week's only big-enough
+     * day, regardless of which discipline the athlete actually needs to
+     * develop — bike would always win over run purely because the bike-long
+     * catalog's median duration happens to be larger, even for an athlete
+     * whose limiter *is* run. The fix makes the tie-break consult the
+     * athlete's own limiter analysis first, so the outcome genuinely flips
+     * between two athletes with opposite limiters (success criterion #1),
+     * instead of being an accident of catalog authoring. */
+    it('gives the big day to the limiter discipline\'s long anchor, not whichever discipline the catalog happens to favor', () => {
+      const runIsLimiter = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'base',
+        weekIndexInPhase: 0,
+        weeksInPhase: 4,
+        weekId: 'week-run-limiter',
+        availability: oneBigDayAvailability(),
+        athleteProfile: athleteWith('run', 'bike'),
+      })
+      const bikeIsLimiter = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'base',
+        weekIndexInPhase: 0,
+        weeksInPhase: 4,
+        weekId: 'week-bike-limiter',
+        availability: oneBigDayAvailability(),
+        athleteProfile: athleteWith('bike', 'run'),
+      })
+
+      const bigDay = '2026-01-10' // Saturday, the only 90min day
+      const onBigDay = (sessions: ReturnType<typeof buildWeekSessions>) => sessions.find((s) => s.date === bigDay)
+
+      expect(onBigDay(runIsLimiter)?.discipline).toBe('run')
+      expect(onBigDay(bikeIsLimiter)?.discipline).toBe('bike')
     })
   })
 })

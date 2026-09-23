@@ -287,6 +287,35 @@ export const WORKOUT_FAMILIES: Record<string, WorkoutFamily> = {
     explanation: 'Reproduit ton allure cible de course — la préparation la plus spécifique possible hors brick.',
     evidenceClassification: H,
   },
+  // Coaching defect found during the Training Intelligence V2.1 audit
+  // (brief §22, taper/race coherence): unlike SWIM_RECOVERY/RUN_RECOVERY
+  // below, this family never existed even though `bike-recovery` has been
+  // a real catalog template all along — `getFamilyForSession('bike',
+  // 'recovery')` silently returned `undefined`, so `generateWeeklySessionRequirements`
+  // (`if (!family) continue`) dropped bike's requirement with no warning
+  // wherever a 'recovery' bike touch was requested: entirely in race week
+  // (`PRIMARY_SESSION_TYPE_BY_PHASE.race.bike`), and as the taper phase's
+  // secondary touch (`SECONDARY_SESSION_TYPE_BY_PHASE.taper.bike`) — race
+  // week silently lost its bike session altogether, and taper silently
+  // lost a day-slot it had already reserved for it instead of reassigning
+  // it to another discipline.
+  BIKE_RECOVERY: {
+    id: 'BIKE_RECOVERY',
+    discipline: 'bike',
+    sessionType: 'recovery',
+    trainingPurpose: 'Récupération active sans ajouter de fatigue.',
+    physiologicalIntent: 'Circulation, décrassage musculaire.',
+    appropriatePhases: ['base', 'build', 'specific', 'taper', 'race'],
+    raceFormatRelevance: { sprint: 'minor', olympic: 'minor' },
+    progressionLevels: 1,
+    minimumEffectiveDurationMin: 15,
+    defaultPriority: 'RECOVERY',
+    fatigueCost: 'low',
+    recoveryRequirement: 0,
+    fallbackPrescription: 'RPE très facile uniquement.',
+    explanation: 'Relance les jambes sans ajouter de fatigue supplémentaire.',
+    evidenceClassification: H,
+  },
 
   // ----------------------------------------------------------------- RUN
   RUN_ENDURANCE: {

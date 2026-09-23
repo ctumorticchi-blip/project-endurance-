@@ -69,6 +69,57 @@ export const BRICK_SESSIONS: SessionTemplate[] = [
       },
     ],
   },
+  // Coaching defect found during the Training Intelligence V2.1 audit
+  // (brief §21, brick-progression sufficiency): `brick-race-rehearsal`
+  // below (130min) is far beyond what a realistic ~6h/week athlete's
+  // biggest single day actually offers (e.g. the Gold Standard benchmark's
+  // 90min Saturday) — it never fit, so the specific phase's intended
+  // three-stage escalation (BRICK_ADAPTATION → BRICK_SPECIFIC →
+  // BRICK_RACE_REHEARSAL) silently collapsed into only two distinct
+  // sessions: the last specific week's "rehearsal" always degraded to the
+  // exact same 90min template as the mid-phase BRICK_SPECIFIC stage,
+  // defeating the escalation's own purpose. Same shape of defect as
+  // `bike-endurance-reduced`/`bike-long-compact` above: a realistic-duration
+  // 'peak'-tier rung on the ladder, sized to the family's own
+  // `minimumEffectiveDurationMin` (90) rather than assuming multi-hour
+  // daily availability. The escalation here is qualitative (full race-day
+  // rehearsal: pacing, transitions, nutrition/equipment test) rather than
+  // purely longer, which is coherent at this duration too.
+  {
+    id: 'brick-race-rehearsal-compact',
+    discipline: 'brick',
+    sessionType: 'race-specific',
+    tier: 'peak',
+    title: 'Répétition générale (format réaliste)',
+    objective:
+      "Simulation limitée du jour de course dans le temps réellement disponible : allures cibles, transitions, et l'occasion de tester ta stratégie de nutrition/matériel avant la vraie course.",
+    estimatedDurationMin: 90,
+    defaultPriority: 'key',
+    blocks: [
+      {
+        label: 'Vélo allure course',
+        durationSec: minutesToSec(55),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+        note: 'Teste ici ta stratégie de nutrition/hydratation de course.',
+      },
+      {
+        label: 'Transition rapide',
+        durationSec: minutesToSec(3),
+        targetRpeMin: RPE_RANGE.easy[0],
+        targetRpeMax: RPE_RANGE.easy[1],
+        note: "Enchaîne comme le jour J : matériel de course, pas d'entraînement.",
+      },
+      {
+        label: 'Course allure course',
+        durationSec: minutesToSec(32),
+        targetZone: 'Z3',
+        targetRpeMin: RPE_RANGE.tempo[0],
+        targetRpeMax: RPE_RANGE.tempo[1],
+      },
+    ],
+  },
   {
     id: 'brick-race-rehearsal',
     discipline: 'brick',

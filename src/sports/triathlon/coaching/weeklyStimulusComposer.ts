@@ -137,7 +137,45 @@ export function getSecondaryType(
   const rotation = limiterAnalysis
     ? getLimiterAdjustedRotation(discipline, limiterAnalysis)
     : GENERIC_SECONDARY_ROTATION_FALLBACK[discipline]
-  return rotation[weekIndexInPhase % rotation.length]!
+  const picked = rotation[weekIndexInPhase % rotation.length]!
+  const anchorType = PRIMARY_SESSION_TYPE_BY_PHASE[phase][discipline]
+
+  // A secondary/support touch must be a genuinely different, lighter
+  // stimulus than the week's own anchor — never an exact repeat of it.
+  // Coaching defect found during the Training Intelligence V2.1 audit
+  // (brief §20, swim quality/content): a hand-authored rotation entry
+  // that happens to equal the phase's own anchor type isn't "a second
+  // touch", it silently schedules the anchor stimulus twice in the same
+  // week (this can occur for a limiter athlete once the deload-week
+  // exclusion above doesn't happen to line up with it). Checked
+  // generically against `PRIMARY_SESSION_TYPE_BY_PHASE` rather than
+  // hand-fixing the one rotation table entry that currently triggers it.
+  if (picked === anchorType) return calmDefault
+
+  // On the phase's hardest (`peak`) week, the anchor session is already at
+  // its toughest version of its own stimulus — stacking a second,
+  // independently high-cost stimulus of the SAME discipline on top of it
+  // compounds fatigue exactly when the week is already carrying the most.
+  // Coaching defect found during the Training Intelligence V2.1 audit
+  // (brief §16, Week 8): a bike-neutral athlete's build-phase peak week
+  // combined a tier-bumped Sweet Spot anchor with a rotation-driven VO2max
+  // secondary touch — two independently demanding bike sessions in one
+  // week, on top of that week's already-hard swim CSS and run tempo
+  // anchors. Detected generically via the family registry's own
+  // `incompatibleNeighbors` (already authored to flag exactly this pair,
+  // `BIKE_SWEET_SPOT` ↔ `BIKE_VO2`, for adjacent-day placement) rather
+  // than a new hardcoded "top-end session type" table — so it generalizes
+  // to any future family pair the registry marks incompatible, and to any
+  // discipline, not just bike, without special-casing this one week.
+  if (tier === 'peak') {
+    const anchorFamily = getFamilyForSession(discipline, anchorType)
+    const pickedFamily = getFamilyForSession(discipline, picked)
+    if (anchorFamily && pickedFamily && anchorFamily.incompatibleNeighbors?.includes(pickedFamily.id)) {
+      return calmDefault
+    }
+  }
+
+  return picked
 }
 
 /**
@@ -482,7 +520,25 @@ export function generateWeeklySessionRequirements(
   if (phase !== 'race') {
     const coreSessionsCount = frequency.swim + frequency.bike + frequency.run + (brickRequired ? 1 : 0)
     const daysStillFree = budget.availableDays - coreSessionsCount
-    const estimatedCoreMinutes = requirements.reduce((sum, r) => sum + r.preferredDurationMin, 0)
+    // Capped at the week's average minutes/day, not each requirement's raw
+    // `preferredDurationMin` — a real coaching defect found reviewing the
+    // Gold Standard plan: a base-phase "long" anchor's preferred duration
+    // (representative of the *ideal* template, ~150min for bike) is almost
+    // always far more than any single day in a 6-7 day week actually has,
+    // so it will degrade heavily once placed (brief §7's own fallback
+    // chain). Summing the *ideal* durations to decide whether strength has
+    // room left systematically overestimates how much time the week's core
+    // sessions will really consume, which silently excluded strength from
+    // 4 of 5 base-phase weeks in a row — coherent only by accident (the one
+    // week it appeared in happened to have smaller ideal durations, not
+    // more real leftover time). Capping each estimate at a realistic
+    // per-day share fixes the estimate without needing to know actual day
+    // assignments yet (composition still happens before placement).
+    const averageMinutesPerDay = budget.availableDays > 0 ? budget.availableMinutes / budget.availableDays : 0
+    const estimatedCoreMinutes = requirements.reduce(
+      (sum, r) => sum + Math.min(r.preferredDurationMin, averageMinutesPerDay),
+      0,
+    )
     const minutesLeftover = budget.availableMinutes - estimatedCoreMinutes
     const strengthFamilyId = phase === 'base' || phase === 'build' ? 'STRENGTH_FOUNDATION' : 'STRENGTH_MAINTENANCE'
     const strengthFamily = WORKOUT_FAMILIES[strengthFamilyId]!

@@ -43,10 +43,28 @@ export interface PickTemplateOptions {
   rotationKey?: number
 }
 
+/**
+ * Below this, two fitting templates of the same type/tier are considered
+ * genuine structural variants of comparable length (e.g. sweet-spot's
+ * 55min/65min continuous-vs-split options) — `rotationKey` may freely
+ * rotate between them. Above it, the gap is a *duration safety net*, not
+ * a structural choice (e.g. bike-endurance's 40min/70min pair, added in
+ * Training Intelligence V2.1 so a short day isn't forced all the way down
+ * to a recovery spin) — rotation must never pick the far shorter one when
+ * the longer one would fit, or it wastes the week's biggest, most
+ * important days on a needlessly short session roughly one week in two.
+ */
+const STRUCTURAL_VARIANT_MARGIN_MIN = 15
+
 /** Every template of `type` that fits, preferring `tier` and falling back
- * to the always-present 'standard' tier when nothing matches it. Within
- * whichever tier is used, `rotationKey` deterministically picks among
- * several fitting structural variants rather than always the first one. */
+ * to the always-present 'standard' tier when nothing matches it. Prefers
+ * the longest fitting duration by default — never leaves a big day
+ * under-used — and only lets `rotationKey` rotate among templates within
+ * `STRUCTURAL_VARIANT_MARGIN_MIN` of that longest one, so genuine
+ * same-length structural variants still rotate for real diversification
+ * (brief M2's "two structures, same charge") without a much shorter
+ * duration-safety-net template ever winning by chance when it doesn't
+ * need to. */
 function matchType(
   candidates: SessionTemplate[],
   type: SessionType,
@@ -62,9 +80,11 @@ function matchType(
   for (const wantedTier of tiersToTry) {
     const fitting = ofType
       .filter((t) => t.tier === wantedTier && fits(t))
-      .sort((a, b) => a.id.localeCompare(b.id))
+      .sort((a, b) => b.estimatedDurationMin - a.estimatedDurationMin || a.id.localeCompare(b.id))
     if (fitting.length > 0) {
-      return fitting[((rotationKey % fitting.length) + fitting.length) % fitting.length]
+      const longest = fitting[0]!.estimatedDurationMin
+      const topGroup = fitting.filter((t) => longest - t.estimatedDurationMin <= STRUCTURAL_VARIANT_MARGIN_MIN)
+      return topGroup[((rotationKey % topGroup.length) + topGroup.length) % topGroup.length]
     }
   }
   return undefined

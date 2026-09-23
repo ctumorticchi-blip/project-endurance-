@@ -27,6 +27,45 @@ export const BIKE_SESSIONS: SessionTemplate[] = [
     ],
   },
   {
+    // Training Intelligence V2.1 — coaching defect found reviewing the
+    // Gold Standard plan: `bike-endurance` had only this one 70min
+    // 'standard' template, with no shorter variant the way `bike-tempo`/
+    // `bike-sweet-spot`/`swim-endurance` all have. Any day under 70
+    // minutes assigned to a bike-endurance requirement therefore had
+    // nowhere to land — `pickBestFittingTemplate`'s own fallback chain
+    // (endurance -> recovery) always ended at 'recovery' instead, so
+    // bike's secondary touch silently became a recovery spin on almost
+    // every day of this athlete's actual schedule (60/60/60/45/90/45min),
+    // never delivering the aerobic-volume stimulus the Weekly Composer's
+    // rotation was actually asking for. Deliberately `tier: 'standard'`,
+    // not 'reduced': `pickTemplate.ts`'s `matchType` only ever looks at a
+    // lighter tier when the *week's own* tier is already that light — on
+    // an ordinary standard-tier week (the common case here) a 'reduced'
+    // sibling is simply never reached. A second *standard*-tier template
+    // at a shorter duration is exactly the existing "several structural
+    // variants at the same tier, `rotationKey` picks among whichever
+    // fits" mechanism `bike-sweet-spot`/`bike-threshold` already rely on.
+    id: 'bike-endurance-reduced',
+    discipline: 'bike',
+    sessionType: 'endurance',
+    tier: 'standard',
+    title: 'Endurance vélo (courte)',
+    objective: 'Construire ta base aérobie à vélo sur une durée plus courte.',
+    estimatedDurationMin: 40,
+    defaultPriority: 'secondary',
+    blocks: [
+      warmupBlock(8),
+      {
+        label: 'Roulage Z2',
+        durationSec: minutesToSec(24),
+        targetZone: 'Z2',
+        targetRpeMin: RPE_RANGE.endurance[0],
+        targetRpeMax: RPE_RANGE.endurance[1],
+      },
+      cooldownBlock(8),
+    ],
+  },
+  {
     id: 'bike-endurance',
     discipline: 'bike',
     sessionType: 'endurance',
@@ -357,6 +396,40 @@ export const BIKE_SESSIONS: SessionTemplate[] = [
       {
         label: 'Roulage endurance',
         durationSec: minutesToSec(70),
+        targetZone: 'Z2',
+        targetRpeMin: RPE_RANGE.endurance[0],
+        targetRpeMax: RPE_RANGE.endurance[1],
+      },
+      cooldownBlock(10),
+    ],
+  },
+  // Coaching defect found during the Training Intelligence V2.1 audit
+  // (brief §18, long bike development): every 'standard'/'peak'-tier long
+  // ride (150/175min) is far beyond what a realistic ~6h/week athlete's
+  // biggest single day actually offers (e.g. the Gold Standard benchmark's
+  // 90min Saturday) — `pickBestFittingTemplate` never found ANY 'long'
+  // template short enough to fit outside the deload week (the only one
+  // short enough, 90min, is 'reduced'-tier and only requested on a deload
+  // week per its own tier), so the base phase's entire long-ride
+  // durability anchor silently degraded to plain 'endurance' almost every
+  // week, defeating the phase's own stated purpose. Same shape of defect
+  // as `bike-endurance-reduced` above: a realistic-duration 'standard'-tier
+  // rung on the ladder, not a deload-only one, so normal progression weeks
+  // actually get genuine long-ride development.
+  {
+    id: 'bike-long-compact',
+    discipline: 'bike',
+    sessionType: 'long',
+    tier: 'standard',
+    title: 'Sortie longue vélo (format réaliste)',
+    objective: "Développer ta durabilité à vélo dans le temps réellement disponible, sans attendre une disponibilité de plusieurs heures.",
+    estimatedDurationMin: 75,
+    defaultPriority: 'key',
+    blocks: [
+      warmupBlock(10),
+      {
+        label: 'Roulage endurance',
+        durationSec: minutesToSec(55),
         targetZone: 'Z2',
         targetRpeMin: RPE_RANGE.endurance[0],
         targetRpeMax: RPE_RANGE.endurance[1],

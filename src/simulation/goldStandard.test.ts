@@ -94,11 +94,16 @@ describe('Gold Standard — 16-week Olympic triathlon, weak-swim/intermediate-bi
     const specificWeeks = plan.weeks.filter((w) => w.phase === 'specific')
     const brickSessions = specificWeeks.map((w) => w.sessions.find((s) => s.discipline === 'brick'))
     expect(brickSessions.some((s) => s !== undefined)).toBe(true)
-    // A genuine progression (different titles/durations week to week — the
-    // three-stage BRICK_ADAPTATION → BRICK_SPECIFIC → BRICK_RACE_REHEARSAL
-    // escalation), not the identical brick every time.
-    const distinctTitles = new Set(brickSessions.filter((s) => s !== undefined).map((s) => s.title))
-    expect(distinctTitles.size).toBeGreaterThan(1)
+    // A genuine progression (a DIFFERENT title every single week, not just
+    // "more than one distinct title across the whole phase" — a weaker
+    // assertion that a real V2.1 audit defect slipped through: the
+    // mid-phase BRICK_SPECIFIC week and the final BRICK_RACE_REHEARSAL week
+    // both happened to land on the specific phase's 'peak'-tier weeks,
+    // silently collapsing them into the exact same 90min template while
+    // the *first* week's different BRICK_ADAPTATION title alone was enough
+    // to satisfy a "size > 1" check).
+    const titles = brickSessions.filter((s) => s !== undefined).map((s) => s.title)
+    expect(new Set(titles).size).toBe(titles.length)
     for (const week of plan.weeks) {
       if (week.phase !== 'specific') {
         expect(week.sessions.some((s) => s.discipline === 'brick')).toBe(false)

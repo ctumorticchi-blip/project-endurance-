@@ -10,7 +10,7 @@ import { STIMULUS_PRIORITY_ORDER, toSessionPriority } from '@/core/coaching/stim
 import type { SessionRequirement } from '@/core/coaching/sessionRequirement'
 import type { PlannedSession, SessionPriority } from '@/core/training/PlannedSession'
 import type { TrainingPhaseName } from '@/core/training/TrainingPlan'
-import { analyzeLimiters } from '@/sports/triathlon/coaching/limiterAnalysis'
+import { analyzeLimiters, type DisciplineStrengthAnalysis } from '@/sports/triathlon/coaching/limiterAnalysis'
 import {
   computeWeeklyTrainingBudget,
   generateWeeklySessionRequirements,
@@ -63,17 +63,43 @@ const PRIORITY_RANK = new Map(STIMULUS_PRIORITY_ORDER.map((p, i) => [p, i]))
 
 /**
  * Claims days for a list of requirements from a shared, mutable pool —
- * most important first, and within equal importance, whichever requirement
- * needs the most time first (brief V2.1 §7: a requirement with a large
+ * most important first; within equal importance, the athlete's own
+ * limiter/strongest analysis breaks the tie before duration does (brief
+ * V2.1 §19 run-durability audit); only then does whichever requirement
+ * needs the most time win (brief V2.1 §7: a requirement with a large
  * `preferredDurationMin` needs a big day *first*, before smaller sessions
  * claim it for no real reason — the exact problem that used to starve the
  * brick slot down to a 30min transition drill).
+ *
+ * Coaching defect found during the audit: when two disciplines both anchor
+ * on a 'long'-type stimulus the same week (base-phase bike/run for this
+ * athlete's Gold Standard), only one real "big day" usually exists to give
+ * either of them — the old duration-only tie-break let the catalog's own
+ * *median authored duration* per discipline decide who wins, which has
+ * nothing to do with the athlete: it happened to favor bike over run here,
+ * but would keep favoring bike even for an athlete whose limiter *is* run,
+ * silently starving exactly the discipline the composer is supposed to be
+ * developing. Preferring the limiter (and deferring the strongest) first
+ * makes that choice athlete-aware instead of an accident of catalog
+ * authoring, matching the composer's own limiter-adjusted rotation logic.
  */
-function claimDays(requirements: SessionRequirement[], pool: DayWithMinutes[]): Map<SessionRequirement, DayWithMinutes> {
+function claimDays(
+  requirements: SessionRequirement[],
+  pool: DayWithMinutes[],
+  limiterAnalysis?: DisciplineStrengthAnalysis,
+): Map<SessionRequirement, DayWithMinutes> {
   const claimed = new Map<SessionRequirement, DayWithMinutes>()
+  const limiterRank = (r: SessionRequirement): number => {
+    if (!limiterAnalysis || limiterAnalysis.isBalanced) return 0
+    if (r.discipline === limiterAnalysis.limiter) return -1
+    if (r.discipline === limiterAnalysis.strongest) return 1
+    return 0
+  }
   const ordered = [...requirements].sort((a, b) => {
     const rankDiff = (PRIORITY_RANK.get(a.priority) ?? 99) - (PRIORITY_RANK.get(b.priority) ?? 99)
     if (rankDiff !== 0) return rankDiff
+    const limiterDiff = limiterRank(a) - limiterRank(b)
+    if (limiterDiff !== 0) return limiterDiff
     return b.preferredDurationMin - a.preferredDurationMin
   })
   for (const requirement of ordered) {
@@ -96,6 +122,7 @@ function claimDays(requirements: SessionRequirement[], pool: DayWithMinutes[]): 
 function placeRequirements(
   requirements: SessionRequirement[],
   daysWithMinutes: DayWithMinutes[],
+  limiterAnalysis?: DisciplineStrengthAnalysis,
 ): Map<SessionRequirement, DayWithMinutes> {
   const pool = [...daysWithMinutes]
   const [poolRequired, unconstrained] = [
@@ -104,13 +131,13 @@ function placeRequirements(
   ]
 
   const poolDays = pool.filter((d) => d.pool)
-  const poolClaims = claimDays(poolRequired, poolDays)
+  const poolClaims = claimDays(poolRequired, poolDays, limiterAnalysis)
   for (const day of poolClaims.values()) {
     const index = pool.indexOf(day)
     if (index !== -1) pool.splice(index, 1)
   }
 
-  const otherClaims = claimDays(unconstrained, pool)
+  const otherClaims = claimDays(unconstrained, pool, limiterAnalysis)
 
   return new Map([...poolClaims, ...otherClaims])
 }
@@ -253,7 +280,7 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   })
 
   // --- Placement: decide WHEN each requirement can happen ---
-  const dayByRequirement = placeRequirements(requirements, daysWithMinutes)
+  const dayByRequirement = placeRequirements(requirements, daysWithMinutes, limiterAnalysis)
 
   let placements: Placement[] = requirements
     .map((requirement) => {
@@ -272,8 +299,29 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     // (brief §10/§21: strength consumes recovery budget, it is not free
     // additional volume) — matching `strength-maintenance`'s own
     // objective text.
+    //
+    // Brick forces its OWN stage's tier rather than the week's generic
+    // periodization tier. Coaching defect found during the V2.1 audit
+    // (brief §21, brick-progression sufficiency): `BRICK_SPECIFIC` and
+    // `BRICK_RACE_REHEARSAL` deliberately share one `(brick, 'race-specific')`
+    // catalog pair, distinguished only by tier (brief `getFamilyForSession`'s
+    // own docstring) — but the specific phase's *own* load curve puts
+    // several of its weeks at 'peak' tier for unrelated reasons (its own
+    // progressive-overload cycle), so whichever brick stage a 'peak' week
+    // happened to request was silently promoted to the rehearsal-tier
+    // template regardless of which stage it actually was — collapsing the
+    // mid-phase `BRICK_SPECIFIC` week into an identical session to the
+    // final `BRICK_RACE_REHEARSAL` week. The rehearsal escalation must
+    // depend on which brick stage this requirement actually is, not on the
+    // week's unrelated periodization tier.
     const effectiveTier =
-      requirement.discipline === 'strength' && (phase === 'specific' || phase === 'taper') ? 'reduced' : tier
+      requirement.discipline === 'strength' && (phase === 'specific' || phase === 'taper')
+        ? 'reduced'
+        : requirement.discipline === 'brick'
+          ? requirement.familyId === 'BRICK_RACE_REHEARSAL'
+            ? 'peak'
+            : 'standard'
+          : tier
 
     const template = pickBestFittingTemplate(requirement.discipline, requirement.sessionType, day.minutes, {
       tier: effectiveTier,
