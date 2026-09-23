@@ -166,21 +166,31 @@ describe('generateTrainingPlan', () => {
       today,
     }).plan
 
-    const runSessionTypes = (plan: typeof swimmerPlan) =>
+    const sessionTypesOf = (plan: typeof swimmerPlan, discipline: 'run' | 'swim') =>
       allSessions(plan)
-        .filter((s) => s.discipline === 'run')
+        .filter((s) => s.discipline === discipline)
         .map((s) => s.sessionType)
 
     // Run is the weak runner's limiter (development-weighted rotation) but
     // the weak swimmer's strength (maintenance-only rotation) — the exact
     // same race, phase, and availability produce a genuinely different run
     // program depending on which athlete it's for.
-    const runnerRunTypes = new Set(runSessionTypes(runnerPlan))
-    const swimmerRunTypes = new Set(runSessionTypes(swimmerPlan))
+    const runnerRunTypes = new Set(sessionTypesOf(runnerPlan, 'run'))
+    const swimmerRunTypes = new Set(sessionTypesOf(swimmerPlan, 'run'))
     expect(runnerRunTypes.has('technique')).toBe(true)
     // The strong-run athlete's run secondary rotation never reaches for
     // 'long'/'intervals' the way a non-strength discipline's would.
     expect(swimmerRunTypes.has('long') && swimmerRunTypes.has('intervals')).toBe(false)
+
+    // Mirror check on swim, the flip side of the same limiter mechanism
+    // (was unreachable until the swim day-priority/second-touch fix — see
+    // docs/coaching-methodology.md's defect log): swim is only ever given a
+    // second weekly touch when it is the athlete's own limiter, so the weak
+    // swimmer trains it noticeably more often across the plan than the weak
+    // runner (whose limiter is run, not swim) does.
+    const swimSessionCount = (plan: typeof swimmerPlan) =>
+      allSessions(plan).filter((s) => s.discipline === 'swim').length
+    expect(swimSessionCount(swimmerPlan)).toBeGreaterThan(swimSessionCount(runnerPlan))
   })
 
   it('produces no negative-duration sessions', () => {

@@ -224,4 +224,108 @@ describe('buildWeekSessions', () => {
       expect(secondaryTypesAcrossCycle.size).toBeGreaterThan(1)
     })
   })
+
+  describe('brick day assignment (Training Intelligence V2 — Gold Standard coaching review)', () => {
+    /** Uneven-availability week shaped like the Gold Standard benchmark's:
+     * one big day, three mid-sized days, two short days — the exact shape
+     * that starved the brick slot down to a 30min transition drill every
+     * time (see buildWeekSessions.ts's `dayAssignmentRank`). */
+    function unevenAvailability(): Availability {
+      const pattern = createEmptyWeeklyPattern()
+      pattern.tuesday = { available: true, minutes: 60, poolAccess: true }
+      pattern.wednesday = { available: true, minutes: 60, poolAccess: false }
+      pattern.thursday = { available: true, minutes: 60, poolAccess: true }
+      pattern.friday = { available: true, minutes: 45, poolAccess: false }
+      pattern.saturday = { available: true, minutes: 90, poolAccess: false }
+      pattern.sunday = { available: true, minutes: 45, poolAccess: false }
+      return { weeklyPattern: pattern, exceptions: [], restDays: ['monday'] }
+    }
+
+    it('gives the brick slot a day with enough time for a real brick, not whatever is left over', () => {
+      // weekIndexInPhase=1 is the only in-phase index `shouldInsertBrick`
+      // fires on for a 3-week specific phase (odd index, brief-driven
+      // "every other week" cadence) — matches the Gold Standard's week 12.
+      const sessions = buildWeekSessions({
+        weekStart: '2026-10-12',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'specific',
+        weekIndexInPhase: 1,
+        weeksInPhase: 3,
+        weekId: 'week-specific-2',
+        availability: unevenAvailability(),
+        athleteProfile: TEST_ATHLETE_PROFILE,
+      })
+
+      const brick = sessions.find((s) => s.discipline === 'brick')
+      expect(brick).toBeDefined()
+      // Before the fix this always degraded to the 30min transition-only
+      // fallback because the brick slot was processed last, after both
+      // bike touches and swim had already claimed every day with 60+
+      // minutes — leaving only the week's two 45min days for it.
+      expect(brick!.sessionType).not.toBe('transition')
+      expect(brick!.estimatedDurationMin).toBeGreaterThanOrEqual(60)
+    })
+
+    it('still gives swim its pool day even though brick is now claimed earlier', () => {
+      const sessions = buildWeekSessions({
+        weekStart: '2026-10-12',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'specific',
+        weekIndexInPhase: 1,
+        weeksInPhase: 3,
+        weekId: 'week-specific-2',
+        availability: unevenAvailability(),
+        athleteProfile: TEST_ATHLETE_PROFILE,
+      })
+
+      const swim = sessions.find((s) => s.discipline === 'swim')
+      expect(swim).toBeDefined()
+      expect(['2026-10-13', '2026-10-15']).toContain(swim!.date) // Tuesday or Thursday — the only pool days
+    })
+  })
+
+  describe('strength type selection (Training Intelligence V2 — Gold Standard coaching review)', () => {
+    it('gives base/build a full strength stimulus, not the lightweight maintenance circuit every week', () => {
+      // Before the fix, strength had no `preferredType` at all: an empty
+      // type chain always fell through to "shortest template of the
+      // discipline that fits", which a two-template catalog resolves to
+      // the 20min `strength-maintenance` every single time, regardless of
+      // phase or available time — brief §21's STRENGTH_FOUNDATION stimulus
+      // was unreachable by the generator.
+      const sessions = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'build',
+        weekIndexInPhase: 0, // load-building week, not the cycle's deload
+        weeksInPhase: 4,
+        weekId: 'week-build-0',
+        availability: availabilityAllDays(60),
+        athleteProfile: TEST_ATHLETE_PROFILE,
+      })
+
+      const strength = sessions.find((s) => s.discipline === 'strength')
+      expect(strength).toBeDefined()
+      expect(strength!.title).toBe('Renforcement général')
+      expect(strength!.estimatedDurationMin).toBe(35)
+    })
+
+    it('always uses the lighter maintenance circuit in specific/taper/race to protect recovery for triathlon-specific work', () => {
+      for (const phase of ['specific', 'taper', 'race'] as const) {
+        const sessions = buildWeekSessions({
+          weekStart: '2026-01-05',
+          planEndDateExclusive: '2027-01-01',
+          phase,
+          weekIndexInPhase: 0,
+          weeksInPhase: 4,
+          weekId: `week-${phase}`,
+          availability: availabilityAllDays(60),
+          athleteProfile: TEST_ATHLETE_PROFILE,
+        })
+
+        const strength = sessions.find((s) => s.discipline === 'strength')
+        expect(strength, `phase ${phase} has no strength session`).toBeDefined()
+        expect(strength!.title, `phase ${phase}`).toBe("Renforcement d'entretien")
+      }
+    })
+  })
 })

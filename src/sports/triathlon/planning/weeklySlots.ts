@@ -159,3 +159,60 @@ export function applyBrickInsertion(disciplines: Discipline[]): Discipline[] {
   }
   return result
 }
+
+/**
+ * A second weekly swim touch for an athlete whose limiter is swim —
+ * coaching defect found reviewing the Gold Standard plan (brief §34): the
+ * base `WEEKLY_SLOT_DISCIPLINES` table never gives swim more than one
+ * occurrence for *any* day count, so a genuinely weak swimmer with real
+ * pool access twice a week still got exactly one swim session across all
+ * 16 weeks — identical to an athlete for whom swim was already strong,
+ * and the entire limiter-development rotation built for exactly this case
+ * (`getLimiterAdjustedRotation`, `weeklyStimulusComposer.ts`) was
+ * structurally unreachable for swim. Brief §19: "weak swimmers should
+ * often receive proportionally more technical work rather than simply
+ * more volume" — more *frequency*, not just a different session type,
+ * follows the same logic. Bike/run never need this: at 4+ days they
+ * already get a second occurrence from the base table.
+ *
+ * Skipped in taper/race (those phases deliberately reduce volume, not add
+ * to it) and on a balanced athlete (nothing to bias toward). Not gated on
+ * day count the way `shouldInsertBrick` is — `applyLimiterSwimTouch`
+ * itself is a no-op whenever there is no spare slot to claim, which
+ * naturally covers every low-day-count case without a separate check.
+ * COACHING_HEURISTIC.
+ */
+export function shouldInsertLimiterSwimTouch(
+  phase: TrainingPhaseName,
+  limiterAnalysis: DisciplineStrengthAnalysis,
+): boolean {
+  return (
+    (phase === 'base' || phase === 'build' || phase === 'specific') &&
+    !limiterAnalysis.isBalanced &&
+    limiterAnalysis.limiter === 'swim'
+  )
+}
+
+/**
+ * Replaces the last non-key occurrence of the athlete's *strongest*
+ * discipline with a second swim slot — sacrificing time from wherever it
+ * is least costly (brief §18/§24: maintain the strongest without
+ * disproportionate time) rather than always the same fixed slot
+ * regardless of who that athlete's strongest discipline actually is. A
+ * no-op when that discipline has no non-key slot left to give up (e.g. a
+ * brick already claimed it, or there simply aren't enough training days).
+ */
+export function applyLimiterSwimTouch(
+  disciplines: Discipline[],
+  limiterAnalysis: DisciplineStrengthAnalysis,
+): Discipline[] {
+  const result = [...disciplines]
+  for (let i = result.length - 1; i >= 0; i--) {
+    const priority = WEEKLY_SLOT_PRIORITIES[i]
+    if (priority !== 'key' && result[i] === limiterAnalysis.strongest) {
+      result[i] = 'swim'
+      return result
+    }
+  }
+  return result
+}

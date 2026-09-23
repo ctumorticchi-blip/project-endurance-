@@ -16,10 +16,12 @@ import { pickBestFittingTemplate } from './pickTemplate'
 import { getSessionTier, getWeekLoadMultiplier } from './progressionCurve'
 import {
   applyBrickInsertion,
+  applyLimiterSwimTouch,
   getSecondaryType,
   PRIMARY_BRICK_TYPE_BY_PHASE,
   PRIMARY_SESSION_TYPE_BY_PHASE,
   shouldInsertBrick,
+  shouldInsertLimiterSwimTouch,
   WEEKLY_SLOT_DISCIPLINES,
   WEEKLY_SLOT_PRIORITIES,
 } from './weeklySlots'
@@ -106,6 +108,10 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     disciplines = applyBrickInsertion(disciplines)
   }
 
+  if (shouldInsertLimiterSwimTouch(phase, limiterAnalysis)) {
+    disciplines = applyLimiterSwimTouch(disciplines, limiterAnalysis)
+  }
+
   // How many times each discipline has already been *assigned a session*
   // so far this week — read before, and updated after, each slot decision,
   // so "occurrence 0" reliably means "this discipline's anchor session".
@@ -120,7 +126,45 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   const remainingDays = [...daysWithMinutes]
   const sessions: PlannedSession[] = []
 
-  for (let slot = 0; slot < disciplines.length; slot++) {
+  // Days are otherwise claimed strictly in slot-array order, which causes
+  // two distinct problems once a slot needs something a plain `shift()`
+  // (take whichever day currently has the most remaining minutes) doesn't
+  // account for:
+  //
+  //  1. Brick needs far more time than an ordinary secondary touch, but
+  //     `applyBrickInsertion` places it wherever a secondary run/bike
+  //     touch happened to sit (often the very last slot) — by which point
+  //     only the two lowest-availability days remain, never enough for
+  //     even the shortest brick template. It silently degraded to a 30min
+  //     transition drill every time (found reviewing the Gold Standard
+  //     plan, brief §34).
+  //  2. Swim needs a day with pool access specifically, not just any day —
+  //     it already has its own pool-seeking search below, but that search
+  //     only sees whatever days *other* slots haven't already claimed via
+  //     plain `shift()`. With two pool days and only one swim occurrence
+  //     this was invisible (one spare pool day was always enough), but
+  //     giving a limiter-swim athlete a second weekly swim touch exposed
+  //     it: a *key* run/bike slot processed first could still shift() away
+  //     one of the two pool days before either swim slot got a turn,
+  //     leaving swim's second occurrence with no pool day to find and
+  //     silently rerouting it to bike/run instead.
+  //
+  // Both need first claim on the day pool ahead of ordinary secondary/
+  // optional slots — swim ahead of everything (it only ever claims a
+  // pool-having day, or falls back gracefully when none remain, so
+  // letting it go first never costs bike/run a day they actually need),
+  // brick right after the key anchors. `Array#sort` is stable, so this
+  // only pulls swim/brick forward; the relative order of every other slot
+  // (and therefore each discipline's occurrence count) is unchanged.
+  const dayAssignmentRank = (slot: number): number => {
+    if (disciplines[slot] === 'swim') return 0
+    if (WEEKLY_SLOT_PRIORITIES[slot] === 'key') return 1
+    if (disciplines[slot] === 'brick') return 2
+    return 3
+  }
+  const slotOrder = disciplines.map((_, slot) => slot).sort((a, b) => dayAssignmentRank(a) - dayAssignmentRank(b))
+
+  for (const slot of slotOrder) {
     const discipline = disciplines[slot]!
     const priority = WEEKLY_SLOT_PRIORITIES[slot] ?? 'optional'
 
@@ -155,10 +199,31 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
           : getSecondaryType(phase, effectiveDiscipline, weekIndexInPhase, tier, limiterAnalysis)
         : effectiveDiscipline === 'brick'
           ? PRIMARY_BRICK_TYPE_BY_PHASE[phase]
-          : undefined
+          : effectiveDiscipline === 'strength'
+            ? 'strength'
+            : undefined
+
+    // Strength had no `preferredType` at all until this fix (coaching
+    // defect found reviewing the Gold Standard plan, brief §21: every
+    // single week of all 16, base through taper, got the identical 20min
+    // maintenance circuit — `pickBestFittingTemplate` was falling straight
+    // through to "shortest template of the discipline that fits" with an
+    // empty type chain, which the two-template strength catalog always
+    // resolves to `strength-maintenance`). Base/build should get the full
+    // `strength-general` stimulus (tier-aware, degrading to maintenance on
+    // this week's own deload/minimal tier like everything else); specific/
+    // taper/race force the lighter tier regardless, protecting recovery
+    // capacity for the triathlon-specific work those phases exist for
+    // (brief §21: "strength consumes recovery capacity, do not treat it as
+    // free additional volume") — matching `strength-maintenance`'s own
+    // objective text, unreachable before this fix.
+    const effectiveTier: typeof tier =
+      effectiveDiscipline === 'strength' && (phase === 'specific' || phase === 'taper' || phase === 'race')
+        ? 'reduced'
+        : tier
 
     const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes, {
-      tier,
+      tier: effectiveTier,
       rotationKey: weekIndexInPhase,
     })
     if (!template) continue
