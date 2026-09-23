@@ -52,6 +52,14 @@ describe('CompletedFeedbackPage', () => {
     expect(submit).toBeEnabled()
 
     await user.click(submit)
+
+    // Training Intelligence V2: submitting feedback for a session that maps
+    // to a workout family (bike/endurance does) shows a brief progression
+    // confirmation before returning to Today, rather than navigating away
+    // immediately — see CompletedFeedbackPage's `progressionResponse` state.
+    const continueButton = await screen.findByRole('button', { name: 'Continuer' })
+    expect(screen.getByText('Pour la prochaine fois')).toBeInTheDocument()
+    await user.click(continueButton)
     expect(await screen.findByText('TODAY')).toBeInTheDocument()
 
     const completed = CompletedSessionRepository.loadAll()

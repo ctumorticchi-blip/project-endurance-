@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { SecondaryRaceGoal } from '@/core/goals/SecondaryRaceGoal'
 import { TRAINING_PHASE_LABELS, type TrainingWeek } from '@/core/training/TrainingPlan'
+import { explainWeekPurpose } from '@/engine/coach/explainWeekPurpose'
 import { Badge } from '@/shared/components/Badge'
 import { Card } from '@/shared/components/Card'
 import { DISCIPLINE_LABELS } from '@/shared/discipline'
@@ -72,39 +73,42 @@ export function WeekCard({ week, isCurrent, secondaryRaces = [] }: WeekCardProps
       </button>
 
       {expanded && (
-        <ul id={summaryId} className="mt-2 flex flex-col gap-1">
-          {weekDays(week, secondaryRaces).map(({ date, session, race }) => (
-            <li key={date}>
-              <Link
-                to={`/day/${date}`}
-                className={`flex items-center justify-between gap-2 rounded-[var(--radius-sm)] px-1.5 py-1.5 text-xs transition-colors hover:bg-surface-muted ${
-                  date === today ? 'bg-surface-muted' : ''
-                }`}
-              >
-                {session ? (
-                  <>
-                    <span>
-                      {formatDate(date)} · {DISCIPLINE_LABELS[session.discipline]} — {session.title}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1.5 text-text-muted">
-                      {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
-                      <Badge tone={PRIORITY_TONE[session.priority]}>{PRIORITY_LABELS[session.priority]}</Badge>
-                      {session.estimatedDurationMin} min
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-text-muted">{formatDate(date)}</span>
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
-                      <Badge tone="neutral">Repos</Badge>
-                    </span>
-                  </>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="mt-2 text-xs text-text-muted">{explainWeekPurpose(week.phase)}</p>
+          <ul id={summaryId} className="mt-2 flex flex-col gap-1">
+            {weekDays(week, secondaryRaces).map(({ date, session, race }) => (
+              <li key={date}>
+                <Link
+                  to={`/day/${date}`}
+                  className={`flex items-center justify-between gap-2 rounded-[var(--radius-sm)] px-1.5 py-1.5 text-xs transition-colors hover:bg-surface-muted ${
+                    date === today ? 'bg-surface-muted' : ''
+                  }`}
+                >
+                  {session ? (
+                    <>
+                      <span>
+                        {formatDate(date)} · {DISCIPLINE_LABELS[session.discipline]} — {session.title}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5 text-text-muted">
+                        {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
+                        <Badge tone={PRIORITY_TONE[session.priority]}>{PRIORITY_LABELS[session.priority]}</Badge>
+                        {session.estimatedDurationMin} min
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-text-muted">{formatDate(date)}</span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {race && <Badge tone="accent">🏁 {race.raceName}</Badge>}
+                        <Badge tone="neutral">Repos</Badge>
+                      </span>
+                    </>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </Card>
   )
