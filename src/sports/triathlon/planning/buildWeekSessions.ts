@@ -6,25 +6,21 @@ import {
   resolveRestDates,
   type Availability,
 } from '@/core/availability/Availability'
-import type { PlannedSession } from '@/core/training/PlannedSession'
+import { STIMULUS_PRIORITY_ORDER, toSessionPriority } from '@/core/coaching/stimulusPriority'
+import type { SessionRequirement } from '@/core/coaching/sessionRequirement'
+import type { PlannedSession, SessionPriority } from '@/core/training/PlannedSession'
 import type { TrainingPhaseName } from '@/core/training/TrainingPlan'
 import { analyzeLimiters } from '@/sports/triathlon/coaching/limiterAnalysis'
-import type { DateISO, Discipline } from '@/shared/types/common'
+import {
+  computeWeeklyTrainingBudget,
+  generateWeeklySessionRequirements,
+} from '@/sports/triathlon/coaching/weeklyStimulusComposer'
+import { getFamilyForSession } from '@/sports/triathlon/coaching/workoutFamilies'
+import type { DateISO } from '@/shared/types/common'
 import { addDays } from '@/shared/utils/date'
 import { instantiateSessionTemplate } from '../sessions'
 import { pickBestFittingTemplate } from './pickTemplate'
 import { getSessionTier, getWeekLoadMultiplier } from './progressionCurve'
-import {
-  applyBrickInsertion,
-  applyLimiterSwimTouch,
-  getSecondaryType,
-  PRIMARY_BRICK_TYPE_BY_PHASE,
-  PRIMARY_SESSION_TYPE_BY_PHASE,
-  shouldInsertBrick,
-  shouldInsertLimiterSwimTouch,
-  WEEKLY_SLOT_DISCIPLINES,
-  WEEKLY_SLOT_PRIORITIES,
-} from './weeklySlots'
 
 export interface BuildWeekSessionsInput {
   weekStart: DateISO
@@ -50,6 +46,147 @@ export interface BuildWeekSessionsInput {
 /** Below this, a "session" would be too short to be worth prescribing. */
 const MIN_VIABLE_SESSION_MINUTES = 15
 
+type DayWithMinutes = { date: DateISO; minutes: number; pool: boolean }
+
+/**
+ * Where each requirement actually lands (day + real catalog template) —
+ * kept together through placement so the post-pass recovery-conflict
+ * resolver (`resolveRecoveryConflicts`) can reason about what's adjacent
+ * to what without re-deriving anything.
+ */
+interface Placement {
+  requirement: SessionRequirement
+  day: DayWithMinutes
+}
+
+const PRIORITY_RANK = new Map(STIMULUS_PRIORITY_ORDER.map((p, i) => [p, i]))
+
+/**
+ * Claims days for a list of requirements from a shared, mutable pool —
+ * most important first, and within equal importance, whichever requirement
+ * needs the most time first (brief V2.1 §7: a requirement with a large
+ * `preferredDurationMin` needs a big day *first*, before smaller sessions
+ * claim it for no real reason — the exact problem that used to starve the
+ * brick slot down to a 30min transition drill).
+ */
+function claimDays(requirements: SessionRequirement[], pool: DayWithMinutes[]): Map<SessionRequirement, DayWithMinutes> {
+  const claimed = new Map<SessionRequirement, DayWithMinutes>()
+  const ordered = [...requirements].sort((a, b) => {
+    const rankDiff = (PRIORITY_RANK.get(a.priority) ?? 99) - (PRIORITY_RANK.get(b.priority) ?? 99)
+    if (rankDiff !== 0) return rankDiff
+    return b.preferredDurationMin - a.preferredDurationMin
+  })
+  for (const requirement of ordered) {
+    const day = pool.shift()
+    if (day) claimed.set(requirement, day)
+  }
+  return claimed
+}
+
+/**
+ * Places every requirement on a real day — pool access is a genuine
+ * constraint (brief V2.1 §8), not a priority hack: requirements that need
+ * it are solved as their own sub-problem, against only the pool-accessible
+ * days, *before* everything else is placed against what's left. This
+ * replaces V2's single global "swim always goes first" rank hack, which
+ * only worked because nothing else ever needed a resource-based
+ * constraint; the two-phase shape here generalizes to a future
+ * indoor-trainer/track/open-water constraint without changing shape.
+ */
+function placeRequirements(
+  requirements: SessionRequirement[],
+  daysWithMinutes: DayWithMinutes[],
+): Map<SessionRequirement, DayWithMinutes> {
+  const pool = [...daysWithMinutes]
+  const [poolRequired, unconstrained] = [
+    requirements.filter((r) => r.requiresPoolAccess),
+    requirements.filter((r) => !r.requiresPoolAccess),
+  ]
+
+  const poolDays = pool.filter((d) => d.pool)
+  const poolClaims = claimDays(poolRequired, poolDays)
+  for (const day of poolClaims.values()) {
+    const index = pool.indexOf(day)
+    if (index !== -1) pool.splice(index, 1)
+  }
+
+  const otherClaims = claimDays(unconstrained, pool)
+
+  return new Map([...poolClaims, ...otherClaims])
+}
+
+/**
+ * A single, bounded repair pass for adjacent-day recovery conflicts (brief
+ * V2.1 §13) — not a full constraint solver (deliberately: brief §13 itself
+ * warns against "blindly implementing universal rules"). Two *placed*
+ * sessions on calendar-adjacent days whose families name each other in
+ * `incompatibleNeighbors`, both above `fatigueCost: 'low'`, are a real
+ * conflict (e.g. a hard bike the day before a key run). When found, the
+ * lower-priority of the pair is swapped with another placement's day if
+ * that swap removes the conflict without creating a new one — otherwise
+ * the conflict is left in place (documented limitation, not silently
+ * hidden) rather than the placement looping indefinitely chasing a perfect
+ * schedule.
+ */
+function resolveRecoveryConflicts(placements: Placement[]): Placement[] {
+  const result = [...placements]
+  const dayMs = (date: DateISO) => new Date(date).getTime()
+  const oneDayMs = 24 * 60 * 60 * 1000
+
+  const isConflict = (a: Placement, b: Placement): boolean => {
+    if (Math.abs(dayMs(a.day.date) - dayMs(b.day.date)) !== oneDayMs) return false
+    if (a.requirement.fatigueCost === 'low' || b.requirement.fatigueCost === 'low') return false
+    return (
+      a.requirement.incompatibleFamilies.includes(b.requirement.familyId) ||
+      b.requirement.incompatibleFamilies.includes(a.requirement.familyId)
+    )
+  }
+
+  for (let i = 0; i < result.length; i++) {
+    for (let j = i + 1; j < result.length; j++) {
+      const a = result[i]!
+      const b = result[j]!
+      if (!isConflict(a, b)) continue
+
+      // Prefer moving whichever of the pair is lower priority (higher
+      // PRIORITY_RANK index = less important) to a third placement's day,
+      // provided that day doesn't create a new conflict for either side.
+      // Never touches a pool-constrained placement on either end of the
+      // swap — that assignment already solved a hard constraint (brief
+      // §8), and an unconditional swap here could silently put swim on a
+      // day without pool access.
+      const [mover, anchor] =
+        (PRIORITY_RANK.get(a.requirement.priority) ?? 0) >= (PRIORITY_RANK.get(b.requirement.priority) ?? 0)
+          ? [a, b]
+          : [b, a]
+      if (mover.requirement.requiresPoolAccess) continue
+
+      const swapCandidate = result.find((p) => {
+        if (p === mover || p === anchor) return false
+        if (p.requirement.requiresPoolAccess) return false
+        const wouldConflictWithAnchor = Math.abs(dayMs(p.day.date) - dayMs(anchor.day.date)) === oneDayMs
+        return !wouldConflictWithAnchor
+      })
+
+      // Both directions must still fit their own requirement's minimum
+      // effective duration after the swap — a repair that fixes a
+      // recovery conflict by producing an unusably short session for
+      // someone else is not an improvement.
+      if (
+        swapCandidate &&
+        swapCandidate.day.minutes >= mover.requirement.minimumEffectiveDurationMin &&
+        mover.day.minutes >= swapCandidate.requirement.minimumEffectiveDurationMin
+      ) {
+        const moverDay = mover.day
+        mover.day = swapCandidate.day
+        swapCandidate.day = moverDay
+      }
+    }
+  }
+
+  return result
+}
+
 export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession[] {
   const {
     weekStart,
@@ -69,9 +206,10 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
   const tier = getSessionTier(loadMultiplier)
 
   // Computed once per week — see limiterAnalysis.ts. Cheap, pure, and the
-  // single input that makes the secondary-touch rotation below athlete-aware
-  // instead of identical for every triathlete regardless of their own
-  // declared swim/bike/run levels (Training Intelligence V2).
+  // single input that makes the Weekly Composer's discipline frequency and
+  // secondary-touch rotation athlete-aware instead of identical for every
+  // triathlete regardless of their own declared swim/bike/run levels
+  // (Training Intelligence V2).
   const limiterAnalysis = analyzeLimiters(athleteProfile)
 
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter(
@@ -90,7 +228,7 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     explicitRestDates.size > 0 ? explicitRestDates.size : resolveDesiredRestDays(availability)
   const maxTrainingDays = Math.max(0, weekDates.length - restDaysPerWeek)
 
-  const daysWithMinutes = weekDates
+  const daysWithMinutes: DayWithMinutes[] = weekDates
     .filter((date) => !explicitRestDates.has(date))
     .map((date) => ({
       date,
@@ -101,143 +239,70 @@ export function buildWeekSessions(input: BuildWeekSessionsInput): PlannedSession
     .sort((a, b) => b.minutes - a.minutes)
     .slice(0, maxTrainingDays)
 
-  const numDays = daysWithMinutes.length
-  let disciplines: Discipline[] = WEEKLY_SLOT_DISCIPLINES[Math.min(numDays, 7)] ?? []
+  // --- Composition: decide WHAT is required (Training Intelligence V2.1) ---
+  // See weeklyStimulusComposer.ts's module comment for what this replaces.
+  // Neither this function nor anything it calls decides frequency from here
+  // on — it only places what the composer already decided.
+  const budget = computeWeeklyTrainingBudget(daysWithMinutes, phase, tier)
+  const requirements = generateWeeklySessionRequirements({
+    weekIndexInPhase,
+    weeksInPhase,
+    tier,
+    budget,
+    limiterAnalysis,
+  })
 
-  if (shouldInsertBrick(phase, weekIndexInPhase, numDays)) {
-    disciplines = applyBrickInsertion(disciplines)
-  }
+  // --- Placement: decide WHEN each requirement can happen ---
+  const dayByRequirement = placeRequirements(requirements, daysWithMinutes)
 
-  if (shouldInsertLimiterSwimTouch(phase, limiterAnalysis)) {
-    disciplines = applyLimiterSwimTouch(disciplines, limiterAnalysis)
-  }
+  let placements: Placement[] = requirements
+    .map((requirement) => {
+      const day = dayByRequirement.get(requirement)
+      return day ? { requirement, day } : undefined
+    })
+    .filter((p): p is Placement => p !== undefined)
 
-  // How many times each discipline has already been *assigned a session*
-  // so far this week — read before, and updated after, each slot decision,
-  // so "occurrence 0" reliably means "this discipline's anchor session".
-  const occurrenceByDiscipline = new Map<Discipline, number>()
-  // Days not yet claimed by a slot. A shared, mutable pool rather than a
-  // fixed slot-index -> day mapping: when the swim slot has to skip ahead
-  // to grab a pool day out of order, that day is properly removed here, so
-  // no later slot can collide with it — and the day it would otherwise have
-  // taken stays in the pool for a later slot instead of being silently
-  // dropped (which used to leave one day of the week with no session at
-  // all, looking like an extra, unrequested rest day).
-  const remainingDays = [...daysWithMinutes]
+  placements = resolveRecoveryConflicts(placements)
+
   const sessions: PlannedSession[] = []
-
-  // Days are otherwise claimed strictly in slot-array order, which causes
-  // two distinct problems once a slot needs something a plain `shift()`
-  // (take whichever day currently has the most remaining minutes) doesn't
-  // account for:
-  //
-  //  1. Brick needs far more time than an ordinary secondary touch, but
-  //     `applyBrickInsertion` places it wherever a secondary run/bike
-  //     touch happened to sit (often the very last slot) — by which point
-  //     only the two lowest-availability days remain, never enough for
-  //     even the shortest brick template. It silently degraded to a 30min
-  //     transition drill every time (found reviewing the Gold Standard
-  //     plan, brief §34).
-  //  2. Swim needs a day with pool access specifically, not just any day —
-  //     it already has its own pool-seeking search below, but that search
-  //     only sees whatever days *other* slots haven't already claimed via
-  //     plain `shift()`. With two pool days and only one swim occurrence
-  //     this was invisible (one spare pool day was always enough), but
-  //     giving a limiter-swim athlete a second weekly swim touch exposed
-  //     it: a *key* run/bike slot processed first could still shift() away
-  //     one of the two pool days before either swim slot got a turn,
-  //     leaving swim's second occurrence with no pool day to find and
-  //     silently rerouting it to bike/run instead.
-  //
-  // Both need first claim on the day pool ahead of ordinary secondary/
-  // optional slots — swim ahead of everything (it only ever claims a
-  // pool-having day, or falls back gracefully when none remain, so
-  // letting it go first never costs bike/run a day they actually need),
-  // brick right after the key anchors. `Array#sort` is stable, so this
-  // only pulls swim/brick forward; the relative order of every other slot
-  // (and therefore each discipline's occurrence count) is unchanged.
-  const dayAssignmentRank = (slot: number): number => {
-    if (disciplines[slot] === 'swim') return 0
-    if (WEEKLY_SLOT_PRIORITIES[slot] === 'key') return 1
-    if (disciplines[slot] === 'brick') return 2
-    return 3
-  }
-  const slotOrder = disciplines.map((_, slot) => slot).sort((a, b) => dayAssignmentRank(a) - dayAssignmentRank(b))
-
-  for (const slot of slotOrder) {
-    const discipline = disciplines[slot]!
-    const priority = WEEKLY_SLOT_PRIORITIES[slot] ?? 'optional'
-
-    let day: (typeof daysWithMinutes)[number] | undefined
-    let effectiveDiscipline: Discipline = discipline
-    let effectiveOccurrence = occurrenceByDiscipline.get(discipline) ?? 0
-
-    if (discipline === 'swim') {
-      const poolIndex = remainingDays.findIndex((d) => d.pool)
-      if (poolIndex !== -1) {
-        day = remainingDays.splice(poolIndex, 1)[0]
-      } else if (remainingDays.length > 0) {
-        // No pool access anywhere this week: don't waste this day's time —
-        // give it to whichever of bike/run has had the fewer sessions so far.
-        day = remainingDays.shift()
-        const bikeCount = occurrenceByDiscipline.get('bike') ?? 0
-        const runCount = occurrenceByDiscipline.get('run') ?? 0
-        effectiveDiscipline = runCount <= bikeCount ? 'run' : 'bike'
-        effectiveOccurrence = runCount <= bikeCount ? runCount : bikeCount
-      }
-    } else {
-      day = remainingDays.shift()
-    }
-
-    if (!day) continue
-    occurrenceByDiscipline.set(effectiveDiscipline, effectiveOccurrence + 1)
-
-    const preferredType =
-      effectiveDiscipline === 'bike' || effectiveDiscipline === 'run' || effectiveDiscipline === 'swim'
-        ? effectiveOccurrence === 0
-          ? PRIMARY_SESSION_TYPE_BY_PHASE[phase][effectiveDiscipline]
-          : getSecondaryType(phase, effectiveDiscipline, weekIndexInPhase, tier, limiterAnalysis)
-        : effectiveDiscipline === 'brick'
-          ? PRIMARY_BRICK_TYPE_BY_PHASE[phase]
-          : effectiveDiscipline === 'strength'
-            ? 'strength'
-            : undefined
-
-    // Strength had no `preferredType` at all until this fix (coaching
-    // defect found reviewing the Gold Standard plan, brief §21: every
-    // single week of all 16, base through taper, got the identical 20min
-    // maintenance circuit — `pickBestFittingTemplate` was falling straight
-    // through to "shortest template of the discipline that fits" with an
-    // empty type chain, which the two-template strength catalog always
-    // resolves to `strength-maintenance`). Base/build should get the full
-    // `strength-general` stimulus (tier-aware, degrading to maintenance on
-    // this week's own deload/minimal tier like everything else); specific/
-    // taper/race force the lighter tier regardless, protecting recovery
+  for (const { requirement, day } of placements) {
+    // Strength forces the lighter catalog tier in specific/taper (never
+    // requested at all in race — see the composer), protecting recovery
     // capacity for the triathlon-specific work those phases exist for
-    // (brief §21: "strength consumes recovery capacity, do not treat it as
-    // free additional volume") — matching `strength-maintenance`'s own
-    // objective text, unreachable before this fix.
-    const effectiveTier: typeof tier =
-      effectiveDiscipline === 'strength' && (phase === 'specific' || phase === 'taper' || phase === 'race')
-        ? 'reduced'
-        : tier
+    // (brief §10/§21: strength consumes recovery budget, it is not free
+    // additional volume) — matching `strength-maintenance`'s own
+    // objective text.
+    const effectiveTier =
+      requirement.discipline === 'strength' && (phase === 'specific' || phase === 'taper') ? 'reduced' : tier
 
-    const template = pickBestFittingTemplate(effectiveDiscipline, preferredType, day.minutes, {
+    const template = pickBestFittingTemplate(requirement.discipline, requirement.sessionType, day.minutes, {
       tier: effectiveTier,
       rotationKey: weekIndexInPhase,
     })
     if (!template) continue
 
+    // A requirement whose actual placed template — after every fallback
+    // degradation `pickBestFittingTemplate` already tries — still lands
+    // below that template's *own* family's minimum effective duration no
+    // longer delivers a real stimulus of any kind (brief V2.1 §7): drop it
+    // rather than schedule a token session (brief §26: no filler).
+    // Deliberately re-derived from the *template actually chosen* rather
+    // than the original requirement's family: a requirement that
+    // gracefully degraded to an easier, shorter-but-still-valid family
+    // (e.g. threshold → endurance) must be judged against what it actually
+    // became, not what it started as.
+    const actualFamily = getFamilyForSession(requirement.discipline, template.sessionType)
+    if (actualFamily && template.estimatedDurationMin < actualFamily.minimumEffectiveDurationMin) continue
+
     // A slot only earns "key" if it actually delivers the anchor stimulus.
     // When time constraints degraded it all the way to a recovery-tier
     // session, calling it "key" would contradict the explanation shown to
     // the athlete (brief §51: cohérence sportive first).
-    const effectivePriority =
-      priority === 'key' && template.sessionType === 'recovery' ? 'secondary' : priority
+    const mappedPriority = toSessionPriority(requirement.priority)
+    const priority: SessionPriority =
+      mappedPriority === 'key' && template.sessionType === 'recovery' ? 'secondary' : mappedPriority
 
-    sessions.push(
-      instantiateSessionTemplate(template, { date: day.date, weekId, priority: effectivePriority }),
-    )
+    sessions.push(instantiateSessionTemplate(template, { date: day.date, weekId, priority }))
   }
 
   return sessions.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))

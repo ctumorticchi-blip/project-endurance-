@@ -4,7 +4,7 @@ import type { TrainingPhaseName, TrainingWeek } from '@/core/training/TrainingPl
 import type { Discipline } from '@/shared/types/common'
 import { instantiateSessionTemplate } from '../sessions'
 import { pickBestFittingTemplate } from './pickTemplate'
-import { PRIMARY_SESSION_TYPE_BY_PHASE, SECONDARY_SESSION_TYPE_BY_PHASE } from './weeklySlots'
+import { PRIMARY_SESSION_TYPE_BY_PHASE, SECONDARY_SESSION_TYPE_BY_PHASE } from '@/sports/triathlon/coaching/weeklyStimulusComposer'
 
 export interface SwapSessionContext {
   phase: TrainingPhaseName

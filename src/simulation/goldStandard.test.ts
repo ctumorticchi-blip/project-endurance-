@@ -80,11 +80,25 @@ describe('Gold Standard — 16-week Olympic triathlon, weak-swim/intermediate-bi
     expect(raceWeek.targetLoad).toBeLessThan(Math.min(...others.map((w) => w.targetLoad)))
   })
 
-  it('bricks appear only in the specific phase, and not every week within it', () => {
+  // Training Intelligence V2.1 (brief §21 — is one random brick across 16
+  // weeks really sufficient?): the composer now runs a genuine three-stage
+  // progression across the *entire* specific phase — BRICK_ADAPTATION
+  // (introduces the concept), BRICK_SPECIFIC (every other week in
+  // between), BRICK_RACE_REHEARSAL (once, right before taper) — rather
+  // than a single every-other-week coin flip that happened to skip most
+  // weeks. For this athlete's 3-week specific phase that means all three
+  // weeks get a brick, each a different, escalating family — which is the
+  // intended outcome, not a bug (see the next assertion for the escalation
+  // itself). Never appears outside the specific phase either way.
+  it('runs a brick progression across the specific phase — never outside it', () => {
     const specificWeeks = plan.weeks.filter((w) => w.phase === 'specific')
-    const weeksWithBrick = specificWeeks.filter((w) => w.sessions.some((s) => s.discipline === 'brick'))
-    expect(weeksWithBrick.length).toBeGreaterThan(0)
-    expect(weeksWithBrick.length).toBeLessThan(specificWeeks.length)
+    const brickSessions = specificWeeks.map((w) => w.sessions.find((s) => s.discipline === 'brick'))
+    expect(brickSessions.some((s) => s !== undefined)).toBe(true)
+    // A genuine progression (different titles/durations week to week — the
+    // three-stage BRICK_ADAPTATION → BRICK_SPECIFIC → BRICK_RACE_REHEARSAL
+    // escalation), not the identical brick every time.
+    const distinctTitles = new Set(brickSessions.filter((s) => s !== undefined).map((s) => s.title))
+    expect(distinctTitles.size).toBeGreaterThan(1)
     for (const week of plan.weeks) {
       if (week.phase !== 'specific') {
         expect(week.sessions.some((s) => s.discipline === 'brick')).toBe(false)

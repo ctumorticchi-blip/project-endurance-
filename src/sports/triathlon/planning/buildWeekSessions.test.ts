@@ -309,8 +309,8 @@ describe('buildWeekSessions', () => {
       expect(strength!.estimatedDurationMin).toBe(35)
     })
 
-    it('always uses the lighter maintenance circuit in specific/taper/race to protect recovery for triathlon-specific work', () => {
-      for (const phase of ['specific', 'taper', 'race'] as const) {
+    it('always uses the lighter maintenance circuit in specific/taper to protect recovery for triathlon-specific work', () => {
+      for (const phase of ['specific', 'taper'] as const) {
         const sessions = buildWeekSessions({
           weekStart: '2026-01-05',
           planEndDateExclusive: '2027-01-01',
@@ -326,6 +326,29 @@ describe('buildWeekSessions', () => {
         expect(strength, `phase ${phase} has no strength session`).toBeDefined()
         expect(strength!.title, `phase ${phase}`).toBe("Renforcement d'entretien")
       }
+    })
+
+    // Training Intelligence V2.1 (brief §10/§26): strength is no longer
+    // requested unconditionally wherever a day-slot happens to exist — it
+    // must earn its place from the week's actual recovery budget, and race
+    // week's budget is never available to it. Previously (V2) the fixed
+    // `WEEKLY_SLOT_DISCIPLINES` table always reserved a strength slot at
+    // 6+ training days regardless of phase, so even race week got one; the
+    // dynamic composer's `generateWeeklySessionRequirements` explicitly
+    // excludes strength from race week instead.
+    it('never requests strength in race week, even with a full day-slot budget available', () => {
+      const sessions = buildWeekSessions({
+        weekStart: '2026-01-05',
+        planEndDateExclusive: '2027-01-01',
+        phase: 'race',
+        weekIndexInPhase: 0,
+        weeksInPhase: 4,
+        weekId: 'week-race',
+        availability: availabilityAllDays(60),
+        athleteProfile: TEST_ATHLETE_PROFILE,
+      })
+
+      expect(sessions.some((s) => s.discipline === 'strength')).toBe(false)
     })
   })
 })

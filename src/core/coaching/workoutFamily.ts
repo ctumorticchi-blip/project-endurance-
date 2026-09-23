@@ -52,12 +52,25 @@ export interface WorkoutFamily {
   defaultPriority: StimulusPriority
   fatigueCost: FatigueCost
   recoveryRequirement: RecoveryRequirement
+  /**
+   * Below this duration, the family's stimulus is no longer meaningfully
+   * delivered — a "long ride" at 20min isn't a shorter long ride, it's a
+   * different (easier) session (brief V2.1 §7). Distinct from
+   * `preferredDurationMin` on a `SessionRequirement`: this is a fixed
+   * property of the *family*, used both to decide which day a requirement
+   * needs (`weeklyStimulusComposer.ts`) and to know when a requirement
+   * should be dropped/replaced rather than scheduled at a token duration
+   * (`buildWeekSessions.ts`). COACHING_HEURISTIC — a deliberately coarse
+   * threshold, not derived from athlete-specific physiology.
+   */
+  minimumEffectiveDurationMin: number
   /** Family ids this one sequences well with in the same week (e.g. an easy
-   * swim the day after a hard bike). Advisory, used by the cross-discipline
-   * sequencing rules in `buildWeekSessions.ts`. */
+   * swim the day after a hard bike). Advisory, used by the recovery
+   * compatibility pass in `buildWeekSessions.ts`'s `resolveRecoveryConflicts`. */
   compatibleNeighbors?: string[]
   /** Family ids that should not be scheduled on the same or adjacent day
-   * without an explicit reason (e.g. two high-cost bike sessions back to back). */
+   * without an explicit reason (e.g. two high-cost bike sessions back to
+   * back) — enforced by `resolveRecoveryConflicts` (`buildWeekSessions.ts`). */
   incompatibleNeighbors?: string[]
   requiredEquipment?: string[]
   /** `KnownMetrics` field name(s) that unlock a precise (not RPE-fallback)

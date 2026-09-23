@@ -5,7 +5,7 @@ import type { DateISO } from '@/shared/types/common'
 import { addDays } from '@/shared/utils/date'
 import { instantiateSessionTemplate } from '../sessions'
 import { pickBestFittingTemplate } from './pickTemplate'
-import { PRIMARY_SESSION_TYPE_BY_PHASE, SECONDARY_SESSION_TYPE_BY_PHASE } from './weeklySlots'
+import { PRIMARY_SESSION_TYPE_BY_PHASE, SECONDARY_SESSION_TYPE_BY_PHASE } from '@/sports/triathlon/coaching/weeklyStimulusComposer'
 
 /** Below this, a "session" would be too short to be worth prescribing —
  * same threshold `buildWeekSessions.ts` and `pickTemplate.ts` already use. */

@@ -16,6 +16,7 @@ const FAMILY: WorkoutFamily = {
   defaultPriority: 'KEY_A',
   fatigueCost: 'high',
   recoveryRequirement: 1,
+  minimumEffectiveDurationMin: 25,
   fallbackPrescription: 'RPE',
   explanation: 'test',
   evidenceClassification: 'EVIDENCE_BASED',
